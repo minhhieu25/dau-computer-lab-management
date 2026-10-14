@@ -8,7 +8,7 @@ TÀI LIỆU PHÂN RÃ CHỨC NĂNG HỆ THỐNG QUẢN LÝ PHÒNG MÁY (CLIENT-S
 
 * VAI TRÒ NGƯỜI DÙNG TRÊN PHẦN MỀM SERVER:
 - Giảng viên: điều khiển lớp học (Phân hệ 01 đến 05).
-- Admin (Cán bộ quản lý): quản trị tài khoản và file ghi hình (Phân hệ 06).
+- Admin (Cán bộ quản lý): quản lý tài khoản (Phân hệ 06) và file ghi hình (Phân hệ 07).
 - Phần mềm Server yêu cầu đăng nhập; vai trò quyết định chức năng được dùng.
 
 * QUY ƯỚC ĐƠN VỊ:
@@ -84,7 +84,7 @@ PHÂN HỆ 03: TRÌNH CHIẾU VÀ GIÁM SÁT MÀN HÌNH (Lệnh: TCP; Trình chi
 - 2.1 Lệnh Bắt đầu/Dừng trình chiếu: Phát lệnh TCP điều khiển.
 - 2.2 Phát luồng hình ảnh trình chiếu: Bóp nén, đóng gói và phát một luồng UDP Multicast chứa màn hình giảng viên tới cả lớp.
 - 2.3 Lệnh Yêu cầu/Dừng giám sát: Phát lệnh TCP yêu cầu một Client được chọn gửi luồng Video về Server.
-- 2.4 Ghi hình màn hình Client: Khi đang Live-view, giảng viên có thể phát lệnh "Bắt đầu/Dừng ghi". Server lưu luồng Video nhận được (720p, 10 FPS) thành file `[IP]_[ngày_giờ].mp4` vào thư mục ghi hình trên ổ cứng Server, đồng thời ghi nhật ký (tài khoản nào bắt đầu ghi, máy nào, lúc nào).
+- 2.4 Ghi hình màn hình Client: Khi đang Live-view, giảng viên có thể phát lệnh "Bắt đầu/Dừng ghi". Server lưu luồng Video nhận được (720p, 10 FPS) thành file `[IP]_[ngày_giờ].mp4` vào thư mục ghi hình trên ổ cứng Server, đồng thời ghi nhật ký (xem Phân hệ 07).
 - 2.5 Đo thông số luồng hình ảnh: Tính FPS, Băng thông (Mbps) và Tỷ lệ mất gói (%). Luồng Live-view do Server tự đo. Luồng trình chiếu lấy tỷ lệ mất gói từ báo cáo của Client.
 
 * Input 1: Lệnh TCP Bắt đầu/Dừng (Trình chiếu, Live-view).
@@ -135,22 +135,43 @@ PHÂN HỆ 05: THU BÀI TỰ ĐỘNG PULL (Giao thức TCP)
 * Output 3: Màn hình Dashboard TCP hiển thị Tốc độ (Mbps), % hoàn thành và ETA của các máy đang nộp bài.
 
 ---
-PHÂN HỆ 06: QUẢN TRỊ TÀI KHOẢN VÀ DỮ LIỆU GHI HÌNH (Chạy hoàn toàn trên PC Server, không dùng mạng tới Client)
+PHÂN HỆ 06: QUẢN LÝ TÀI KHOẢN VÀ PHÂN QUYỀN (Chạy hoàn toàn trên PC Server)
 
 1. Các chức năng con trên PC Client (Máy sinh viên)
 - Không có.
 
 2. Các chức năng con trên PC Server (Máy giảng viên)
-- 2.1 Đăng nhập và phân quyền: Yêu cầu tài khoản và mật khẩu khi mở phần mềm Server. Vai trò Giảng viên chỉ dùng được Phân hệ 01 đến 05; vai trò Admin dùng được Phân hệ 06. Mật khẩu được lưu dưới dạng băm, không lưu nguyên văn.
-- 2.2 Quản lý tài khoản Giảng viên: Admin tạo mới, khóa/mở khóa, đổi mật khẩu và xóa tài khoản Giảng viên.
-- 2.3 Quản lý file ghi hình: Admin xem danh sách file ghi hình (theo IP máy, ngày giờ, tài khoản đã ghi), xem lại và xóa file. Giảng viên chỉ xem lại được file do chính mình ghi.
-- 2.4 Thiết lập thời hạn lưu: Admin quy định số ngày lưu file ghi hình (mặc định 30 ngày). Server tự động xóa file quá hạn.
-- 2.5 Nhật ký thao tác nhạy cảm: Ghi lại ai bắt đầu ghi hình, ai xem lại, ai xóa file ghi hình và thời điểm. Admin xem được nhật ký này.
+- 2.1 Đăng nhập: Yêu cầu tài khoản và mật khẩu khi mở phần mềm Server. Mật khẩu được lưu dưới dạng băm, không lưu nguyên văn.
+- 2.2 Phân quyền theo vai trò: Giảng viên chỉ dùng được Phân hệ 01 đến 05 và xem lại file ghi hình của mình (Phân hệ 07). Admin dùng được Phân hệ 06 và 07, không điều khiển lớp học.
+- 2.3 Tạo tài khoản Giảng viên: Admin nhập tên đăng nhập, họ tên và mật khẩu ban đầu.
+- 2.4 Khóa / Mở khóa tài khoản Giảng viên: Tài khoản bị khóa không đăng nhập được.
+- 2.5 Đổi mật khẩu: Admin đặt lại mật khẩu cho Giảng viên; mỗi người tự đổi mật khẩu của mình.
+- 2.6 Xóa tài khoản Giảng viên: Admin xóa tài khoản không còn sử dụng.
 
 * Input 1: Tài khoản và mật khẩu đăng nhập.
-* Input 2: Thông tin tài khoản Giảng viên do Admin nhập (tạo, khóa, đổi mật khẩu, xóa).
-* Input 3: Lệnh xem lại / xóa file ghi hình và giá trị thời hạn lưu từ Admin.
+* Input 2: Thông tin tài khoản Giảng viên do Admin nhập (tạo, khóa/mở khóa, đổi mật khẩu, xóa).
 * Output 1: Phần mềm Server hiển thị đúng chức năng theo vai trò sau khi đăng nhập.
 * Output 2: Danh sách tài khoản Giảng viên và trạng thái (đang dùng / bị khóa).
-* Output 3: Danh sách file ghi hình, cửa sổ xem lại, và kết quả xóa (thủ công hoặc tự động khi quá hạn).
+
+---
+PHÂN HỆ 07: QUẢN LÝ FILE GHI HÌNH (Chạy hoàn toàn trên PC Server)
+
+* File ghi hình được tạo ở Phân hệ 03 (mục 2.4) và lưu trong thư mục ghi hình trên ổ cứng Server.
+
+1. Các chức năng con trên PC Client (Máy sinh viên)
+- Không có.
+
+2. Các chức năng con trên PC Server (Máy giảng viên)
+- 2.1 Xem danh sách file ghi hình: Liệt kê file theo IP máy, ngày giờ và tài khoản đã ghi. Admin thấy tất cả; Giảng viên chỉ thấy file do mình ghi.
+- 2.2 Xem lại file ghi hình: Mở phát lại file đã chọn.
+- 2.3 Xóa file ghi hình: Admin xóa file không còn cần.
+- 2.4 Đặt thời hạn lưu và tự động xóa: Admin quy định số ngày lưu (mặc định 30 ngày). Server tự động xóa file quá hạn.
+- 2.5 Ghi nhật ký thao tác ghi hình: Ghi lại ai bắt đầu ghi, ai xem lại, ai xóa file, vào thời điểm nào.
+- 2.6 Xem nhật ký thao tác ghi hình: Admin xem bảng nhật ký.
+
+* Input 1: Lệnh xem lại / xóa file ghi hình từ người dùng.
+* Input 2: Giá trị thời hạn lưu từ Admin.
+* Output 1: Danh sách file ghi hình theo quyền của người dùng.
+* Output 2: Cửa sổ xem lại file ghi hình.
+* Output 3: Kết quả xóa file (thủ công hoặc tự động khi quá hạn).
 * Output 4: Bảng nhật ký thao tác ghi hình.

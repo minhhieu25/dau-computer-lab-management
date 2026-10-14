@@ -51,8 +51,11 @@ Quy ước đơn vị: tốc độ truyền và băng thông tính bằng Mbps (
 
 Nhóm Yêu cầu Quản trị (Dành cho Cán bộ quản lý)
 
-BR-09 (Quản trị tài khoản & dữ liệu ghi hình):
+BR-09 (Quản lý tài khoản & phân quyền):
 - Phần mềm Server yêu cầu đăng nhập. Có hai vai trò: Admin và Giảng viên. Chỉ tài khoản Giảng viên mới được điều khiển lớp học (khóa máy, trình chiếu, giám sát, ghi hình, phát/thu tài liệu).
 - Admin tạo, khóa/mở khóa, đổi mật khẩu và xóa tài khoản Giảng viên.
-- Admin xem danh sách, xem lại và xóa các file ghi hình; quy định thời hạn lưu file ghi hình (mặc định 30 ngày, quá hạn tự xóa).
-- Hệ thống ghi nhật ký các thao tác nhạy cảm: ai bắt đầu ghi hình, ai xem lại, ai xóa file ghi hình, vào thời điểm nào.
+
+BR-10 (Quản lý file ghi hình):
+- Admin xem danh sách, xem lại và xóa các file ghi hình; Giảng viên xem lại được file do chính mình ghi.
+- Admin quy định thời hạn lưu file ghi hình (mặc định 30 ngày, quá hạn tự xóa).
+- Hệ thống ghi nhật ký các thao tác nhạy cảm: ai bắt đầu ghi hình, ai xem lại, ai xóa file ghi hình, vào thời điểm nào. Admin xem được nhật ký này.
