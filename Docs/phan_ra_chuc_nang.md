@@ -9,6 +9,7 @@ TÀI LIỆU PHÂN RÃ CHỨC NĂNG HỆ THỐNG QUẢN LÝ PHÒNG MÁY (CLIENT-S
 * VAI TRÒ NGƯỜI DÙNG TRÊN PHẦN MỀM SERVER:
 - Giảng viên: điều khiển lớp học (Phân hệ 01 đến 05).
 - Admin (Cán bộ quản lý): quản lý tài khoản (Phân hệ 06) và file ghi hình (Phân hệ 07).
+- Sinh viên: đăng nhập trên phần mềm Client để định danh máy, không có quyền điều khiển.
 - Phần mềm Server yêu cầu đăng nhập; vai trò quyết định chức năng được dùng.
 
 * QUY ƯỚC ĐƠN VỊ:
@@ -21,6 +22,15 @@ TÀI LIỆU PHÂN RÃ CHỨC NĂNG HỆ THỐNG QUẢN LÝ PHÒNG MÁY (CLIENT-S
   + XANH (Ổn định): nhịp tim đều, RTT <= 100 ms, tỷ lệ mất gói <= 5%.
   + VÀNG (Không ổn định): mất 1 đến 2 nhịp tim liên tiếp, hoặc RTT > 100 ms, hoặc tỷ lệ mất gói > 5%.
   + ĐỎ (Offline): mất 3 nhịp tim liên tiếp (khoảng 30 giây).
+
+* CẤU TRÚC THƯ MỤC:
+- Máy sinh viên (Client):
+  D:\ThuMucDungChung\<MSSV>\DeBai    (nhận đề bài)
+  D:\ThuMucDungChung\<MSSV>\NopBai   (bài làm)
+- Máy giảng viên (Server):
+  ...\ThuBai\<user giảng viên>\<IP>_<MSSV>\   (bài nộp của từng máy, giữ nguyên tên file)
+- Giảng viên chỉ thấy bài do tài khoản của mình thu.
+- Máy chưa đăng nhập không có thư mục, không nhận đề và tính là "Chưa nộp".
 
 ---
 PHÂN HỆ 01: QUẢN LÝ KẾT NỐI VÀ HIỂN THỊ TRẠNG THÁI (Thông báo: UDP Broadcast; Kết nối: TCP; Nhịp tim: UDP Unicast)
@@ -38,13 +48,13 @@ PHÂN HỆ 01: QUẢN LÝ KẾT NỐI VÀ HIỂN THỊ TRẠNG THÁI (Thông bá
 - 2.2 Phát thông báo Server (beacon): Định kỳ phát gói UDP Broadcast chứa IP và cổng của Server để Client tìm thấy.
 - 2.3 Phản hồi nhịp tim (ACK): Trả lời ngay lập tức khi nhận nhịp tim.
 - 2.4 Phân loại trạng thái: Đánh giá từng máy theo 3 trạng thái Xanh / Vàng / Đỏ theo quy ước ở đầu tài liệu.
-- 2.5 Giao diện sơ đồ lưới: Đổi màu ô vuông (Xanh/Vàng/Đỏ) theo thời gian thực.
+- 2.5 Giao diện sơ đồ lưới: Đổi màu ô vuông (Xanh/Vàng/Đỏ) theo thời gian thực, mỗi ô hiện thêm tên/mã SV đang đăng nhập, hoặc “Chưa đăng nhập”.
 - 2.6 Thu thập RTT & Tỷ lệ mất gói: Đọc giá trị RTT do Client gửi lên. Đếm số gói nhịp tim bị mất để tính tỷ lệ mất gói (%).
 
 * Input 1: Client khởi động, nhận beacon và kết nối TCP tới Server.
-* Input 2: Chuỗi "nhịp tim" gửi liên tục từ Client (10 giây/lần).
+* Input 2: Chuỗi "nhịp tim" gửi liên tục từ Client (10 giây/lần). 
 * Output 1: Sơ đồ phòng máy đổi màu Xanh/Vàng/Đỏ trên Server.
-* Output 2: Chỉ số RTT (ms) và Tỷ lệ mất gói (%) hiển thị trên từng ô vuông máy tính.
+* Output 2: Chỉ số RTT (ms) và Tỷ lệ mất gói (%) hiển thị trên từng ô vuông máy tính. mỗi ô hiện thêm tên/mã SV đang đăng nhập, hoặc “Chưa đăng nhập”.
 
 ---
 PHÂN HỆ 02: KHÓA/MỞ KHÓA MÀN HÌNH (TCP)
@@ -68,7 +78,7 @@ PHÂN HỆ 02: KHÓA/MỞ KHÓA MÀN HÌNH (TCP)
 PHÂN HỆ 03: TRÌNH CHIẾU VÀ GIÁM SÁT MÀN HÌNH (Lệnh: TCP; Trình chiếu: UDP Multicast; Live-view: UDP Unicast)
 
 * Quy tắc xử lý mất gói Frame UDP (áp dụng cho cả trình chiếu và Live-view): Mỗi khung hình được chia thành nhiều gói nhỏ, mỗi gói mang Số thứ tự Frame và Số thứ tự Packet. Bên nhận ghép đủ thì hiển thị. Nếu thiếu gói hoặc gói đến trễ, lập tức vứt bỏ toàn bộ Frame đó (không yêu cầu gửi lại). Đếm số gói mất để tính Tỷ lệ mất gói.
-* Thông số luồng hình ảnh của Live-view và Ghi hình: độ phân giải 1280x720 (720p), 10 FPS, khoảng 2 Mbps. Client thu nhỏ ảnh về 720p trước khi gửi, không phụ thuộc độ phân giải màn hình thật của sinh viên.
+* Thông số luồng hình ảnh của Live-view và Ghi hình: độ phân giải 854x480 (480p), 5 FPS, khoảng 0,5 Mbps. Client thu nhỏ ảnh về 480p trước khi gửi, không phụ thuộc độ phân giải màn hình thật của sinh viên.
 * Ràng buộc mạng của Multicast: Switch trong phòng máy cần bật IGMP snooping để luồng trình chiếu không bị tràn ra các cổng không tham gia nhóm.
 * Phân biệt: Luồng trình chiếu dùng Multicast vì mọi máy cùng xem một nội dung. Luồng Live-view dùng Unicast, chỉ gửi từ máy sinh viên được chọn về Server, không máy nào khác nhận được.
 
@@ -77,14 +87,14 @@ PHÂN HỆ 03: TRÌNH CHIẾU VÀ GIÁM SÁT MÀN HÌNH (Lệnh: TCP; Trình chi
 - 1.2 Đo và báo cáo tỷ lệ mất gói trình chiếu: Client tự đếm gói mất của luồng Multicast và báo về Server qua kết nối TCP (Server không tự biết Client nhận tốt hay không).
 - 1.3 Focus mode (Trình chiếu): Chặn phím Alt+Tab và khóa chuột khi trình chiếu.
 - 1.4 Hiển thị cảnh báo giám sát: Bật icon "Đang bị giám sát màn hình". Nếu Server có ghi hình, icon đổi thành "Đang bị giám sát và ghi hình".
-- 1.5 Truyền luồng giám sát ngầm: Chụp liên tục toàn màn hình, thu nhỏ về 720p, chia thành gói nhỏ và truyền Video UDP Unicast về Server.
+- 1.5 Truyền luồng giám sát ngầm: Chụp liên tục toàn màn hình, thu nhỏ về 480p, chia thành gói nhỏ và truyền Video UDP Unicast về Server.
 - 1.6 Dừng và Giải phóng: Khi nhận lệnh Dừng (TCP), rời nhóm Multicast, thoát Focus Mode, tắt icon và dừng truyền Video.
 
 2. Các chức năng con trên PC Server (Máy giảng viên)
 - 2.1 Lệnh Bắt đầu/Dừng trình chiếu: Phát lệnh TCP điều khiển.
 - 2.2 Phát luồng hình ảnh trình chiếu: Bóp nén, đóng gói và phát một luồng UDP Multicast chứa màn hình giảng viên tới cả lớp.
 - 2.3 Lệnh Yêu cầu/Dừng giám sát: Phát lệnh TCP yêu cầu một Client được chọn gửi luồng Video về Server.
-- 2.4 Ghi hình màn hình Client: Khi đang Live-view, giảng viên có thể phát lệnh "Bắt đầu/Dừng ghi". Server lưu luồng Video nhận được (720p, 10 FPS) thành file `[IP]_[ngày_giờ].mp4` vào thư mục ghi hình trên ổ cứng Server, đồng thời ghi nhật ký (xem Phân hệ 07).
+- 2.4 Ghi hình màn hình Client: Khi đang Live-view, giảng viên có thể phát lệnh "Bắt đầu/Dừng ghi". Server lưu luồng Video nhận được (480p, 5 FPS) thành file `[IP]_[ngày_giờ].mp4` vào thư mục ghi hình trên ổ cứng Server, đồng thời ghi nhật ký (xem Phân hệ 07).
 - 2.5 Đo thông số luồng hình ảnh: Tính FPS, Băng thông (Mbps) và Tỷ lệ mất gói (%). Luồng Live-view do Server tự đo. Luồng trình chiếu lấy tỷ lệ mất gói từ báo cáo của Client.
 
 * Input 1: Lệnh TCP Bắt đầu/Dừng (Trình chiếu, Live-view).
@@ -93,7 +103,7 @@ PHÂN HỆ 03: TRÌNH CHIẾU VÀ GIÁM SÁT MÀN HÌNH (Lệnh: TCP; Trình chi
 * Output 1: Màn hình sinh viên chiếu bài giảng của giáo viên.
 * Output 2: Cửa sổ Live-view trên máy giảng viên với màn hình sinh viên.
 * Output 3: Thông số FPS, Băng thông (Mbps), và Tỷ lệ mất gói (%) hiển thị cho từng luồng.
-* Output 4: File ghi hình Video (.mp4, 720p) được lưu trên ổ cứng Server.
+* Output 4: File ghi hình Video (.mp4, 480p) được lưu trên ổ cứng Server.
 
 ---
 PHÂN HỆ 04: PHÁT TÀI LIỆU PUSH (Giao thức TCP)
@@ -102,15 +112,15 @@ PHÂN HỆ 04: PHÁT TÀI LIỆU PUSH (Giao thức TCP)
 
 1. Các chức năng con trên PC Client (Máy sinh viên)
 - 1.1 Nhận file: Đọc tiêu đề (tên file, kích thước), nhận dữ liệu qua TCP và ghi thẳng xuống đĩa.
-- 1.2 Ghi vào Sandbox: Lưu bắt buộc vào đúng thư mục "D:\ThuMucDungChung\DeBai".
+- 1.2 Ghi vào Sandbox: Lưu bắt buộc vào đúng thư mục "D:\ThuMucDungChung\<MSSV>\DeBai". Client tự ghép đường dẫn từ MSSV đang đăng nhập; Server không cần biết thư mục này.
 
 2. Các chức năng con trên PC Server (Máy giảng viên)
-- 2.1 Gửi file: Gửi tiêu đề rồi gửi dữ liệu file (kể cả .zip, Revit, CAD) qua TCP tới các máy được chọn.
+- 2.1 Gửi file: Gửi tiêu đề rồi gửi dữ liệu file (kể cả .zip, Revit, CAD) qua TCP tới các máy được chọn. Chỉ gửi cho các máy đã đăng nhập.
 - 2.2 Tính toán đo lường: Tính % hoàn thành, tốc độ (Mbps) và ETA cho từng máy.
 
 * Input 1: File đề bài được Giảng viên chọn.
 * Input 2: Danh sách các máy sinh viên nhận file.
-* Output 1: File đề bài an toàn trong `D:\ThuMucDungChung\DeBai` của máy sinh viên.
+* Output 1: File đề bài an toàn trong `D:\ThuMucDungChung\<MSSV>\DeBai` của máy sinh viên.
 * Output 2: Màn hình Dashboard hiển thị TCP: Tốc độ (Mbps), % hoàn thành và ETA cho từng máy.
 
 ---
@@ -119,34 +129,36 @@ PHÂN HỆ 05: THU BÀI TỰ ĐỘNG PULL (Giao thức TCP)
 * Cách truyền: Giống phân hệ 04. Client gửi từng file qua TCP, mỗi file có tiêu đề (tên file, kích thước) đi trước, không cắt ghép file.
 
 1. Các chức năng con trên PC Client (Máy sinh viên)
-- 1.1 Lắng nghe lệnh Thu bài: Khóa thao tác chỉnh sửa tại thư mục nộp bài.
-- 1.2 Gửi file bài làm: Chủ động gửi các file trong "D:\ThuMucDungChung\NopBai" lên Server qua TCP.
+- 1.1 Lắng nghe lệnh Thu bài: Khóa thao tác chỉnh sửa tại thư mục nộp bài. Thư mục bị khóa là `D:\ThuMucDungChung\<MSSV>\NopBai`
+- 1.2 Gửi file bài làm: Chủ động gửi các file trong "D:\ThuMucDungChung\<MSSV>\NopBai" lên Server qua TCP. mỗi file có tiêu đề gồm tên file, kích thước và MSSV.
 
 2. Các chức năng con trên PC Server (Máy giảng viên)
 - 2.1 Kích hoạt thu bài: Phát lệnh TCP yêu cầu thu bài từ danh sách máy Online.
 - 2.2 Nhận file: Nhận file qua TCP theo tiêu đề và ghi xuống đĩa.
-- 2.3 Đổi tên tự động và Lưu trữ: Gắn thêm IP máy sinh viên vào trước tên file và lưu vào ổ cứng Server.
-- 2.4 Thống kê & Tính toán đo lường: Hiển thị trạng thái "Đã nộp/Chưa nộp". Đo thông số: % hoàn thành, tốc độ (Mbps) và ETA cho từng máy đang nộp.
+- 2.3 Lưu theo thư mục: Tạo thư mục ...\ThuBai\<user giảng viên>\<ngày_giờ thu>\<IP>_<MSSV>\ và ghi file vào, giữ nguyên tên gốc.
+- 2.4 Thống kê & Tính toán đo lường: danh sách “Đã nộp/Chưa nộp” theo MSSV, kèm IP. Đo thông số: % hoàn thành, tốc độ (Mbps) và ETA cho từng máy đang nộp.
 
 * Input 1: Lệnh "Bắt đầu thu bài" từ Giảng viên.
-* Input 2: File bài làm sinh viên đã lưu vào thư mục `D:\ThuMucDungChung\NopBai`.
-* Output 1: Server lưu trữ thành công các bài thi đã đổi tên (gắn IP).
-* Output 2: Bảng thống kê "Đã nộp" / "Chưa nộp" hiển thị cho Giảng viên.
+* Input 2: File bài làm sinh viên đã lưu vào thư mục `D:\ThuMucDungChung\<MSSV>\NopBai`.
+* Output 1: Server lưu bài nộp của từng máy vào thư mục riêng theo cấu trúc ThuBai\<user giảng viên>\<ngày_giờ thu>\<IP>_<MSSV>\.
+* Output 2: danh sách “Đã nộp/Chưa nộp” theo MSSV, kèm IP
 * Output 3: Màn hình Dashboard TCP hiển thị Tốc độ (Mbps), % hoàn thành và ETA của các máy đang nộp bài.
 
 ---
 PHÂN HỆ 06: QUẢN LÝ TÀI KHOẢN VÀ PHÂN QUYỀN (Chạy hoàn toàn trên PC Server)
 
 1. Các chức năng con trên PC Client (Máy sinh viên)
-- Không có.
+- 1.1 Đăng nhập: Sau khi kết nối Server, Cilent hiện cửa sổ  yêu cầu mã sinh viên và mật khẩu, gửi qua TCP, nhận kết quả. Mật khẩu không gửi nguyên văn. Máy chưa đăng nhập vẫn Online và vẫn nhận lệnh khóa, trình chiếu, thu bài.
 
 2. Các chức năng con trên PC Server (Máy giảng viên)
 - 2.1 Đăng nhập: Yêu cầu tài khoản và mật khẩu khi mở phần mềm Server. Mật khẩu được lưu dưới dạng băm, không lưu nguyên văn.
-- 2.2 Phân quyền theo vai trò: Giảng viên chỉ dùng được Phân hệ 01 đến 05 và xem lại file ghi hình của mình (Phân hệ 07). Admin dùng được Phân hệ 06 và 07, không điều khiển lớp học.
-- 2.3 Tạo tài khoản Giảng viên: Admin nhập tên đăng nhập, họ tên và mật khẩu ban đầu.
-- 2.4 Khóa / Mở khóa tài khoản Giảng viên: Tài khoản bị khóa không đăng nhập được.
-- 2.5 Đổi mật khẩu: Admin đặt lại mật khẩu cho Giảng viên; mỗi người tự đổi mật khẩu của mình.
-- 2.6 Xóa tài khoản Giảng viên: Admin xóa tài khoản không còn sử dụng.
+- 2.2 Phân quyền theo vai trò: Giảng viên chỉ dùng được Phân hệ 01 đến 05 và xem lại file ghi hình của mình (Phân hệ 07). Admin dùng được Phân hệ 06 và 07, không điều khiển lớp học. Sinh viên (chỉ đăng nhập định danh).
+- 2.3 Xác thực sinh viên: Kiểm tra mã sinh viên, mật khẩu, trạng thái tài khoản và gắn sinh viên với IP máy
+- 2.4 Xem danh sách tài khoản: Admin xem danh sách tài khoản kèm họ tên, vai trò và trạng thái (đang dùng / bị khóa)
+- 2.5 Tạo tài khoản Giảng viên/sih viên: Admin nhập tên đăng nhập, họ tên và mật khẩu ban đầu.
+- 2.6 Khóa / Mở khóa tài khoản Giảng viên/sinh viên: Tài khoản bị khóa không đăng nhập được.
+- 2.7 Đổi mật khẩu: Admin đặt lại mật khẩu cho Giảng viên/sinh viên; mỗi người tự đổi mật khẩu của mình.
+- 2.8 Xóa tài khoản Giảng viên/sinh viên: Admin xóa tài khoản không còn sử dụng.
 
 * Input 1: Tài khoản và mật khẩu đăng nhập.
 * Input 2: Thông tin tài khoản Giảng viên do Admin nhập (tạo, khóa/mở khóa, đổi mật khẩu, xóa).
