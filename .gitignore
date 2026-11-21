@@ -3,3 +3,5 @@
 .kilo/
 AGENTS.md
 CLAUDE.md
+.gradle/
+**/build/
