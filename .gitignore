@@ -3,3 +3,19 @@
 .kilo/
 AGENTS.md
 CLAUDE.md
+
+# Gradle
+.gradle/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Secrets — never commit credentials (Docs/coding_convention.md section 3)
+.env
+*.local
+
+# Logs
+*.log
