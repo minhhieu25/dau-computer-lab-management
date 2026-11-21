@@ -1,0 +1,10 @@
+[versions]
+javafx-runtime = "21.0.7"
+javafx-plugin = "0.1.0"
+junit = "5.11.4"
+
+[libraries]
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+
+[plugins]
+javafx = { id = "org.openjfx.javafxplugin", version.ref = "javafx-plugin" }

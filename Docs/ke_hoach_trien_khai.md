@@ -11,8 +11,8 @@
 | Hạng mục | Lựa chọn | Lý do |
 |---|---|---|
 | JDK | **Java 21 LTS** (Temurin/Liberica Full hoặc Zulu FX) | Virtual threads cho mỗi kết nối TCP; JDK Full/FX có sẵn JavaFX |
-| UI | **JavaFX 21 LTS** + FXML, MVVM nhẹ | Dashboard lưới, overlay toàn màn hình, binding realtime |
-| Build | **Gradle 8 (Kotlin DSL) multi-module** + wrapper | Build 3 app, `jpackage` plugin |
+| UI | **JavaFX 21 LTS** + FXML, MVC | Dashboard lưới, overlay toàn màn hình; View/Controller tách riêng, nghiệp vụ nằm trong Service |
+| Build | **Gradle 8 (Kotlin DSL) multi-module** + wrapper | Build hai ứng dụng và thư viện dùng chung; `jpackage` plugin |
 | DB | **PostgreSQL 16/17** + **Flyway** + **HikariCP** + **JDBI 3** | Schema versioned; JDBI map record gọn cho dashboard đọc nhiều |
 | Mạng | `ServerSocket/Socket` + `DatagramSocket` + `MulticastSocket` thuần JDK | Đúng TCP / UDP Unicast / UDP Multicast đã chốt |
 | JSON | **Jackson** | Khung TCP `[4B len][2B type][1B ver][JSON]` |
@@ -58,21 +58,21 @@ flowchart TB
 
 ---
 
-## 3. Cấu trúc Gradle
+## 3. Cấu trúc Gradle và MVC
+
+Cây thư mục và trách nhiệm từng package được mô tả chi tiết trong [Docs/project_structure.md](project_structure.md). Server và Client dùng MVC; `shared` chỉ chứa hợp đồng dữ liệu/giao thức dùng chung.
 
 ```
-settings.gradle.kts        # include 3 module + tests
+settings.gradle.kts        # include shared, server, client, shared-test
 gradle/libs.versions.toml  # version catalog
-modules/
-  shared/      Java library — Protocol, MessageType, DTO (Jackson records), cổng, framing
-  server/      application + JavaFX — services, dao, flyway, migration
-  client/      application + JavaFX — agent, overlay, tray
-  shared-test/ fixture: fake client/server cho integration test
-db/migration/  V1__schema.sql, V2__seed.sql
-docs/          protocol-spec.md, nfr.md, test-plan.md, adr/
+shared/       Java library — Protocol, MessageType, DTO (Jackson records), cổng, framing
+server/       application + JavaFX MVC — controller, model, service, dao, network
+client/       application + JavaFX MVC — controller, model, service, agent
+shared-test/  fixture: fake client/server cho integration test
+Docs/          project_structure.md, protocol-spec.md, nfr.md, test-plan.md, adr/
 ```
 
-**Quy tắc:** mọi enum/mã lệnh/DTO nằm **duy nhất** trong `modules/shared`; `server`/`client` không tự khai báo lại.
+**Quy tắc:** mọi enum/mã lệnh/DTO nằm **duy nhất** trong `shared`; `server`/`client` không tự khai báo lại. Flyway migration nằm trong `server/src/main/resources/db/migration/` để được nạp từ classpath.
 
 ---
 
@@ -174,8 +174,8 @@ gantt
 
 1. **`Docs/protocol-spec.md`** theo bảng mã lệnh mục 4 — artifact quyết định, mọi sprint bám vào.
 2. **`Docs/nfr.md`**: tối đa 40 máy/phòng, phản hồi lệnh ≤1 s, 480p/5 FPS/0,5–1 Mbps, giới hạn bảo mật (không TLS, không chặn Ctrl+Alt+Del).
-3. **Khung Gradle**: `gradle init` → 3 module + version catalog + `jpackage` task, commit `feat: scaffold java solution`.
-4. **`db/migration/V1__schema.sql`** từ ERD (kiểu PostgreSQL) + `V2__seed.sql` (1 admin).
+3. **Khung Gradle**: `gradle init` → 3 module ứng dụng + `shared-test` ở project root, version catalog, cấu trúc MVC theo `Docs/project_structure.md` và `jpackage` task; commit `feat: scaffold java solution`.
+4. **`server/src/main/resources/db/migration/V1__schema.sql`** từ ERD (kiểu PostgreSQL) + `V2__seed.sql` (1 admin).
 5. **Spike 1 ngày/ý**, ghi vào `docs/adr/`: (a) Robot 854×480 đạt bao nhiêu FPS, (b) Multicast qua switch lab, (c) JavaFX overlay + JNA BlockInput, (d) JavaCV ghi mp4 từ JPEG.
 
 ---
