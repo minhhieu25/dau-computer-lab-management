@@ -1,0 +1,24 @@
+/* Docs/template.md — shared design tokens */
+.root { -fx-font-family: "Inter", "Segoe UI", sans-serif; -fx-font-size: 15px; -fx-text-fill: #1F2937; }
+.app-root { -fx-background-color: #F8FAFC; }
+.top-bar { -fx-background-color: #1E40AF; -fx-padding: 18px 24px; }
+.brand { -fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold; }
+.header-caption { -fx-text-fill: #DBEAFE; }
+.side-bar { -fx-background-color: #FFFFFF; -fx-padding: 24px 16px; -fx-border-color: #E2E8F0; -fx-border-width: 0 1px 0 0; }
+.sidebar-title { -fx-text-fill: #64748B; -fx-font-weight: bold; }
+.sidebar-foot { -fx-text-fill: #475569; -fx-font-size: 13px; }
+.nav-button { -fx-background-color: transparent; -fx-text-fill: #1F2937; -fx-alignment: CENTER_LEFT; -fx-padding: 12px 14px; -fx-cursor: hand; }
+.nav-button:hover { -fx-background-color: #EFF6FF; }
+.nav-active { -fx-background-color: #0F766E; -fx-text-fill: white; }
+.nav-active:hover { -fx-background-color: #0F766E; }
+.content-area { -fx-padding: 28px; }
+.page-title { -fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #1F2937; }
+.section-title { -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1F2937; }
+.surface { -fx-background-color: white; -fx-background-radius: 10px; -fx-padding: 24px; -fx-border-color: #E2E8F0; -fx-border-radius: 10px; }
+.body-text { -fx-text-fill: #1F2937; }
+.muted { -fx-text-fill: #64748B; }
+.bottom-bar { -fx-background-color: #E2E8F0; -fx-padding: 10px 20px; -fx-text-fill: #475569; -fx-font-size: 12px; -fx-max-width: Infinity; }
+.status-online { -fx-text-fill: #16A34A; -fx-font-weight: bold; }
+.status-unstable { -fx-text-fill: #D97706; -fx-font-weight: bold; }
+.status-offline { -fx-text-fill: #DC2626; -fx-font-weight: bold; }
+.primary-button { -fx-background-color: #1E40AF; -fx-text-fill: white; -fx-padding: 10px 18px; -fx-cursor: hand; }
