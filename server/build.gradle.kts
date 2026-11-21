@@ -9,5 +9,13 @@ javafx {
 
 dependencies {
     implementation(project(":shared"))
+
+    // JUnit 5
     testImplementation(libs.junit.jupiter)
+
+    // PostgreSQL JDBC
+    testImplementation("org.postgresql:postgresql:42.7.7")
+
+    // Zonky Embedded PostgreSQL
+    testImplementation("io.zonky.test:embedded-postgres:2.1.0")
 }
