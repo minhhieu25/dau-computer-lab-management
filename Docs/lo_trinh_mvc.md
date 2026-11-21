@@ -118,15 +118,18 @@ Trên máy chủ already done; các thành viên khác trong nhóm lặp lại c
 
 ---
 
-## 6. Bước 2 — Database (FND-02) — VIỆC TIẾP THEO
+## 6. Bước 2 — Database (FND-02) ✅ ĐÃ XONG (21/11/2026)
 
-1. **Quyết điểm còn thiếu trước khi viết SQL:** ERD chưa có `deleted_at` cho soft-delete tài khoản (quy định ở `Docs/Work_Assignment.md`) — chốt với nhóm rồi mới migrate.
-2. Viết `db/migration/V1__schema.sql` cho **9 bảng ERD** (`user`, `machine`, `system_setting`, `student_session`, `submission_session`, `recording_file`, `recording_log`, `submission`, `submission_file`):
-   - Table/column snake_case; PK `pk_<table>`; FK `fk_<table>_<column>` (theo `Docs/coding_convention.md`).
-3. `V2__seed.sql`: 1 tài khoản admin (mật khẩu hash PBKDF2, không seed mật khẩu trần).
-4. Viết trong `modules/server` → `config/`: `AppConfig` (env vars) → `DataSourceProvider` (Hikari) → `DatabaseMigrator` (Flyway trỏ tới `db/migration`) → `JdbiProvider`.
-5. Viết 9 DAO trong `model/dao/` + test bằng Zonky embedded-postgres (hoặc DB 5433 thật).
-- Branch: `feature/fnd-02-db-schema` (phụ trách: Chung Cơ Tuấn).
+- Branch: `feature/fnd-02-db-schema` (đã push; phụ trách: Chung Cơ Tuấn).
+- **`db/migration/V1__schema.sql`**: 9 bảng ERD đầy đủ — PK `pk_*`, FK `fk_*` (12), UK, CHECK cho role/status/retention (1–120), 13 index `idx_*` cho cột FK và cột truy vấn chính (`last_seen_at`, `expires_at`…).
+- **`db/migration/V2__seed.sql`**: 1 admin (hash PBKDF2-SHA256 210000 vòng, format `pbkdf2-sha256$iter$salt$hash`) + `system_setting` mặc định (retention 30 ngày).
+- **Java mapping thống nhất**: 9 record trong `model/entity/` + 5 enum chuyển đổi `fromDb`/`toDb`; mapping toàn dự án: snake_case↔camelCase qua `SnakeCaseColumnNameMatcher` (cấu hình 1 lần trong `JdbiProvider`), TIMESTAMPTZ→`OffsetDateTime`, UUID→`UUID`, NUMERIC→`BigDecimal`.
+- **`config/`**: `AppConfig` (env `DB_URL`/`DB_USER`/`DB_PASSWORD`/`DB_MIGRATION_LOCATIONS`) → `DataSourceProvider` (Hikari, pool 10) → `DatabaseMigrator` (Flyway) → `JdbiProvider` (+ SQL Object plugin). `ServerApp` chạy migration lúc khởi động (non-fatal, log warning nếu thiếu `DB_PASSWORD`).
+- **Test**: `DatabaseMigrationIT` (Zonky embedded-postgres, không cần Docker) chạy migration thật + assert 9 bảng/12 FK/13 index/seed + FK rule hoạt động.
+- **Điểm lệch ERD cần nhóm xác nhận khi họp:**
+  1. ERD "User" → bảng vật lý **`app_user`** (vì `user` là từ khóa đặc biệt của PostgreSQL);
+  2. **`app_user.deleted_at`** thêm mới cho soft-delete (BR-09, ERD đang thiếu);
+  3. Giá trị CHECK: role `admin|teacher|student`, status `active|locked`, recording `recording|stored|deleted`, submission `submitting|submitted|failed`, submission_session `collecting|completed`.
 
 ## 7. Bước 3 — shared protocol (FND-03)
 
@@ -175,8 +178,8 @@ Sau đó: network core (`BeaconSender`, `TcpServer` virtual-thread, `HeartbeatRe
 
 ## 12. Việc cần làm ngay tiếp theo (theo thứ tự)
 
-1. ✅ ~~Scaffold~~ → commit lên `feature/fnd-01-gradle-scaffold`.
-2. `Docs/protocol-spec.md` + `Docs/nfr.md`.
-3. `db/migration/V1__schema.sql` (9 bảng) + `V2__seed.sql` + cấu hình Hikari/Flyway/JDBI (Bước 2).
+1. ✅ ~~Scaffold~~ → đã push `feature/fnd-02-db-schema` (gồm cả phần scaffold chưa commit).
+2. `Docs/protocol-spec.md` + `Docs/nfr.md` (Bước 3 / FND-03).
+3. ✅ ~~`V1__schema.sql` + `V2__seed.sql` + cấu hình Hikari/Flyway/JDBI~~ (Bước 2).
 4. 4 spike 1 ngày/ý, ghi kết luận vào `Docs/adr/`: Robot 854×480 đạt bao nhiêu FPS · Multicast qua switch lab · JavaFX overlay + JNA BlockInput · JavaCV ghi mp4 từ JPEG.
-5. Luồng MVC dọc đầu tiên: Đăng nhập (Bước 4).
+5. Luồng MVC dọc đầu tiên: Đăng nhập (Bước 4) — dùng sẵn `UserDao.findActiveByUsername` + seed admin.
