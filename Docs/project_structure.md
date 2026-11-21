@@ -2,7 +2,7 @@
 
 ## 1. Mục đích
 
-Tài liệu này mô tả cây thư mục cho Hệ thống Quản lý & Giám sát Phòng máy theo Java 21, JavaFX 21, Gradle multi-module và PostgreSQL. Gradle scaffold và các thư mục nguồn đã được tạo; các lớp ứng dụng sẽ được bổ sung theo phân công chức năng.
+Tài liệu này mô tả cây thư mục cho Hệ thống Quản lý & Giám sát Phòng máy theo Java 21, JavaFX 21, Gradle multi-module và PostgreSQL. Gradle scaffold đã được tạo với Wrapper 8.14.3 và Java toolchain 21; các lớp ứng dụng sẽ được bổ sung theo phân công chức năng.
 
 Ứng dụng Server và Client dùng MVC. `shared` là thư viện dùng chung, không phải một ứng dụng MVC.
 
@@ -16,7 +16,10 @@ project-root/
 ├── gradlew
 ├── gradlew.bat
 ├── gradle/
-│   └── libs.versions.toml
+│   ├── libs.versions.toml
+│   └── wrapper/
+│       ├── gradle-wrapper.jar
+│       └── gradle-wrapper.properties
 ├── shared/
 │   ├── build.gradle.kts
 │   └── src/
