@@ -7,14 +7,23 @@ include("server")
 include("client")
 include("shared-test")
 
-project(":shared").projectDir = file("modules/shared")
-project(":server").projectDir = file("modules/server")
-project(":client").projectDir = file("modules/client")
-project(":shared-test").projectDir = file("modules/shared-test")
-
 // Single repository definition for every module.
 dependencyResolutionManagement {
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
     }
 }
+
+rootProject.name = "dau-computer-lab-management"
+
+include("shared", "server", "client", "shared-test")
+

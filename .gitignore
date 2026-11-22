@@ -4,12 +4,7 @@
 AGENTS.md
 CLAUDE.md
 
-# Gradle
-.gradle/
-build/
-
 # IDE
-.vscode/
 .idea/
 *.iml
 
@@ -19,3 +14,7 @@ build/
 
 # Logs
 *.log
+
+.gradle/
+**/build/
+
