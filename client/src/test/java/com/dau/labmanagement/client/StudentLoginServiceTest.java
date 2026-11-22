@@ -9,6 +9,7 @@ import com.dau.labmanagement.shared.auth.AuthenticationGateway;
 import com.dau.labmanagement.shared.auth.AuthenticationRequest;
 import com.dau.labmanagement.shared.auth.AuthenticationResponse;
 import java.util.Arrays;
+import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class StudentLoginServiceTest {
     private static final String STUDENT_ID = "20260001";
@@ -85,6 +87,40 @@ class StudentLoginServiceTest {
 
         assertTrue(sessionState.studentIdentity().isEmpty());
         assertTrue(sessionState.isOnline());
+    }
+
+    @Test
+    void reportsGatewayFailureWithoutCreatingIdentity() {
+        gateway.authenticationException = new AuthenticationException("connection lost");
+        char[] password = "secret".toCharArray();
+
+        assertEquals(StudentLoginService.LoginStatus.SERVICE_UNAVAILABLE,
+                loginService.login(STUDENT_ID, password));
+
+        assertArrayEquals(new char[password.length], password);
+        assertTrue(sessionState.studentIdentity().isEmpty());
+    }
+
+    @Test
+    void reportsGatewayTimeoutWithoutCreatingIdentityOrHanging() {
+        gateway.authenticationException = new AuthenticationException("authentication timed out");
+        gateway.failureDelayMillis = 25;
+
+        assertTimeoutPreemptively(Duration.ofSeconds(1), () -> assertEquals(
+                StudentLoginService.LoginStatus.SERVICE_UNAVAILABLE,
+                loginService.login(STUDENT_ID, "secret".toCharArray())));
+
+        assertTrue(sessionState.studentIdentity().isEmpty());
+    }
+
+    @Test
+    void unexpectedGatewayRuntimeFailureDoesNotEscapeOrCreateIdentity() {
+        gateway.runtimeFailure = new IllegalStateException("connection unavailable");
+
+        assertEquals(StudentLoginService.LoginStatus.SERVICE_UNAVAILABLE,
+                loginService.login(STUDENT_ID, "secret".toCharArray()));
+
+        assertTrue(sessionState.studentIdentity().isEmpty());
     }
 
     @Test
@@ -165,6 +201,8 @@ class StudentLoginServiceTest {
         private AuthenticationResponse response = AuthenticationResponse.invalidCredentials();
         private AuthenticationException authenticationException;
         private AuthenticationException logoutException;
+        private RuntimeException runtimeFailure;
+        private long failureDelayMillis;
         private String receivedUsername;
         private String loggedOutSessionId;
         private char[] capturedPassword;
@@ -173,7 +211,18 @@ class StudentLoginServiceTest {
         @Override
         public AuthenticationResponse authenticate(AuthenticationRequest request) throws AuthenticationException {
             authenticationCalls++;
+            if (runtimeFailure != null) {
+                throw runtimeFailure;
+            }
             if (authenticationException != null) {
+                if (failureDelayMillis > 0) {
+                    try {
+                        Thread.sleep(failureDelayMillis);
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                        throw new AuthenticationException("authentication interrupted", exception);
+                    }
+                }
                 throw authenticationException;
             }
             receivedUsername = request.username();

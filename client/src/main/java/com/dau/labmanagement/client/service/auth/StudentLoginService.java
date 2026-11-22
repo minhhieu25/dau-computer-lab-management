@@ -55,7 +55,7 @@ public final class StudentLoginService {
             AuthenticationResponse response;
             try (AuthenticationRequest request = new AuthenticationRequest(studentId.trim(), password)) {
                 response = authenticationGateway.authenticate(request);
-            } catch (AuthenticationException exception) {
+            } catch (AuthenticationException | RuntimeException exception) {
                 return LoginStatus.SERVICE_UNAVAILABLE;
             }
 
