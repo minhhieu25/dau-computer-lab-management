@@ -15,20 +15,37 @@ import java.util.UUID;
 public final class FileDistributionService {
     private final RecipientSessionDirectory recipientDirectory;
     private final FileTransferTransport transport;
+    private final FileDistributionAuthorizer authorizer;
+    private final long maximumFileSizeBytes;
 
-    public FileDistributionService(RecipientSessionDirectory recipientDirectory, FileTransferTransport transport) {
+    public FileDistributionService(
+            RecipientSessionDirectory recipientDirectory,
+            FileTransferTransport transport,
+            FileDistributionAuthorizer authorizer,
+            long maximumFileSizeBytes) {
         this.recipientDirectory = Objects.requireNonNull(recipientDirectory, "recipientDirectory");
         this.transport = Objects.requireNonNull(transport, "transport");
+        this.authorizer = Objects.requireNonNull(authorizer, "authorizer");
+        if (maximumFileSizeBytes < 0) {
+            throw new IllegalArgumentException("maximumFileSizeBytes must not be negative");
+        }
+        this.maximumFileSizeBytes = maximumFileSizeBytes;
     }
 
     /**
      * Starts an independent transfer attempt for each distinct selected machine.
      * @param sourceFile the selected source file
      * @param machineIds selected machine identifiers, never student IDs from a UI form
-     * @return one progress item per distinct machine in selection order
+     * @param teacherSessionId the session ID from the trusted server authentication context
+     * @return one cancellable transfer attempt per distinct machine in selection order
      * @throws IOException if the source file is missing, unreadable, or not a regular file
+     * @throws FileDistributionAuthorizationException if the current teacher session is not authorized
      */
-    public List<TransferProgress> distribute(Path sourceFile, List<String> machineIds) throws IOException {
+    public List<FileTransferAttempt> distribute(
+            Path sourceFile,
+            List<String> machineIds,
+            String teacherSessionId) throws IOException, FileDistributionAuthorizationException {
+        authorizer.requireAuthorizedTeacher(requireText(teacherSessionId, "teacherSessionId"));
         Objects.requireNonNull(sourceFile, "sourceFile");
         Objects.requireNonNull(machineIds, "machineIds");
         if (machineIds.isEmpty()) {
@@ -46,7 +63,10 @@ public final class FileDistributionService {
         Path normalizedSource = sourceFile.toAbsolutePath().normalize();
         String fileName = normalizedSource.getFileName().toString();
         long totalBytes = Files.size(normalizedSource);
-        List<TransferProgress> results = new ArrayList<>(uniqueMachineIds.size());
+        if (totalBytes > maximumFileSizeBytes) {
+            throw new IOException("Source file exceeds the configured maximum size");
+        }
+        List<FileTransferAttempt> results = new ArrayList<>(uniqueMachineIds.size());
 
         for (String machineId : uniqueMachineIds) {
             results.add(startForMachine(normalizedSource, machineId, fileName, totalBytes));
@@ -54,20 +74,20 @@ public final class FileDistributionService {
         return List.copyOf(results);
     }
 
-    private TransferProgress startForMachine(Path sourceFile, String machineId, String fileName, long totalBytes) {
+    private FileTransferAttempt startForMachine(Path sourceFile, String machineId, String fileName, long totalBytes) {
         Optional<RecipientSession> session;
         try {
             session = recipientDirectory.findByMachineId(machineId);
         } catch (RecipientLookupException | RuntimeException exception) {
             TransferProgress progress = newProgress(machineId, Optional.empty(), fileName, totalBytes);
             progress.fail("RECIPIENT_LOOKUP_FAILED");
-            return progress;
+            return new FileTransferAttempt(progress, null);
         }
 
         if (session == null || session.isEmpty()) {
             TransferProgress progress = newProgress(machineId, Optional.empty(), fileName, totalBytes);
             progress.reject("MACHINE_NOT_FOUND");
-            return progress;
+            return new FileTransferAttempt(progress, null);
         }
 
         RecipientSession recipient = session.get();
@@ -86,12 +106,17 @@ public final class FileDistributionService {
         } else {
             progress.start();
             try {
-                transport.startTransfer(sourceFile, recipient, progress);
+                TransferHandle handle = transport.startTransfer(sourceFile, recipient, progress);
+                if (handle == null) {
+                    throw new IllegalStateException("Transport must return a cancellation handle");
+                }
+                return new FileTransferAttempt(progress, handle);
             } catch (IOException | RuntimeException exception) {
                 progress.fail("TRANSFER_START_FAILED");
+                return new FileTransferAttempt(progress, null);
             }
         }
-        return progress;
+        return new FileTransferAttempt(progress, null);
     }
 
     private static TransferProgress newProgress(
