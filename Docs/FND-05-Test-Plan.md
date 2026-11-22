@@ -69,24 +69,28 @@ Tat ca BR case duoi day chua duoc thuc thi vi chuc nang/dependency chua san sang
 | FND05-IT-02 | N/A | IT, NT | Hai fixture da ket noi | Heartbeat, command, ACK test | Gui heartbeat; gui/nhan command; gui/nhan ACK; assert history hai dau | Payload va ACK duoc nhan/ghi nhan dung | `PASS` |
 | FND05-NT-03 | N/A | NT | Socket da ket noi; timeout huu han | Khong gui du lieu; dong ket noi client/server | Goi accept/read khi qua han; dong client hoac server; doc EOF | Accept/read nem timeout trong gioi han; dong ket noi tu hai phia duoc nhan la EOF; test khong treo | `PASS` |
 | FND05-IT-04 | N/A | IT | Fixture da tao socket | Dong FakeServer/FakeClient | Dong fixture va kiem tra trang thai socket | Socket/fixture duoc dong; khong ro ri tai nguyen | `PASS` |
+| FND05-IT-05 | N/A | IT | FakeClient/FakeServer da build | Payload rong, chi whitespace hoac co CR/LF | Thu gui command, heartbeat va ACK khong hop le | Fixture tu choi truoc khi ghi message ra socket | `PASS` |
+| FND05-IT-06 | N/A | IT | Hai fixture da ket noi | Message co prefix khong mong doi | Gui message sai loai va goi phuong thuc receive tuong ung | Fixture bao IOException, khong coi du lieu sai dinh dang la ACK/command/heartbeat hop le | `PASS` |
 | FND05-DB-01 | N/A | IT | FND-02 migration va DAO that co san | Du lieu CRUD/rang buoc theo schema that | Chay migration trong Embedded PostgreSQL; CRUD, FK, constraint va rollback theo DAO/schema | Ket qua phu hop schema that; moi test co du lieu co lap | `BLOCKED_BY_FND_02` |
 | FND05-DB-02 | N/A | IT | Khong can schema/DAO | `SELECT 1` | Khoi dong Zonky Embedded PostgreSQL; mo JDBC connection; chay query; dong tai nguyen | PostgreSQL embedded tra ket qua 1 va connection duoc dong sach | `PASS` |
 
 ## 8. Gioi han va dependency
 
-- FND-02 chua co migration SQL va DAO trong `server/src/main`; vi vay chua the kiem thu DAO, CRUD, FK, constraint hoac rollback. Khong tao schema thay the; DAO test o tren dang `BLOCKED_BY_FND_02`.
+- Tren nhanh FND-05 hien tai, migration/DAO FND-02 chua duoc tich hop. Remote `origin/feature/fnd-02-db-schema` co `db/migration/V1__schema.sql`, `V2__seed.sql`, cac DAO trong `modules/server/.../model/dao`, va `DatabaseMigrationIT`. Tuy nhien nhanh FND-02 dat Gradle module tai `modules/*`, khong trung layout root `shared/server/client/shared-test` cua nhanh nay; khong duoc copy/integrate code production FND-02 trong FND-05.
+- FND-02 remote chua co auth service xac thuc password/session; `UserDao.findActiveByUsername()` va `StudentSessionDao` la DAO, khong phai API dang nhap. `DatabaseMigrationIT` co hau to `IT`, va server build khong khai bao task integration-test rieng; can owner FND-02/FND-06 xac nhan cach chay.
+- Khong tao schema gia. CRUD/FK/constraint/rollback DAO tests tren nhanh hien tai van `BLOCKED_BY_FND_02`.
 - FND-03 chua co protocol/network implementation trong workspace tai thoi diem lap ke hoach. Harness loopback la fixture doc lap; BR test can contract that va dang cho FND-03.
 - Kiem thu multicast, UDP quality, Windows input blocking, file lon, MP4 va retention can implementation va/hoac phong may that; khong the xac nhan bang loopback harness.
 - Cac test BR la ke hoach chua chay, khong phai ket qua nghiem thu. Cap nhat trang thai sau moi dot chay voi output Gradle thuc te.
 
 ## 9. Ket qua thuc thi
 
-Ngay 2026-11-21, voi Temurin Java 21.0.13.1:
+Ngay 2026-11-22, voi Java 21 toolchain:
 
 | Lenh | Ket qua | Test |
 |---|---|---|
-| `gradlew.bat :shared-test:test --rerun-tasks` | BUILD SUCCESSFUL | 9 passed, 0 failed, 0 skipped (6 harness tests va 3 smoke tests hien co) |
+| `gradlew.bat :shared-test:test --rerun-tasks` | BUILD SUCCESSFUL | 11 passed, 0 failed, 0 skipped (8 harness tests va 3 smoke tests hien co) |
 | `gradlew.bat :server:test --rerun-tasks` | BUILD SUCCESSFUL | 1 passed, 0 failed, 0 skipped; bao gom `SELECT 1` tren Zonky Embedded PostgreSQL |
 | `gradlew.bat build` | BUILD SUCCESSFUL | Full multi-module build; cac test da chay o hai lenh tren |
 
-Tong test thuc thi: 10 passed, 0 failed, 0 skipped. Gradle co canh bao deprecated features, nhung khong anh huong ket qua build. Ket qua nay khong bao gom BR integration/network/manual tests hoac DAO tests dang bi chan.
+Tong test thuc thi: 12 passed, 0 failed, 0 skipped. Gradle co canh bao deprecated features, nhung khong anh huong ket qua build. Ket qua nay khong bao gom BR integration/network/manual tests hoac DAO tests dang bi chan.

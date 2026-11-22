@@ -4,8 +4,14 @@ import com.dau.labmanagement.test.FakeClient;
 import com.dau.labmanagement.test.FakeServer;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,6 +29,40 @@ class FakeClientServerTest {
         assertThrows(IllegalArgumentException.class, () -> FakeServer.start(Duration.ZERO));
         assertThrows(IllegalArgumentException.class, () -> FakeClient.connect(
                 InetAddress.getLoopbackAddress(), 1, Duration.ZERO, IO_TIMEOUT));
+    }
+
+    @Test
+    void rejectsBlankAndMultiLineOutboundTestMessages() throws Exception {
+        try (FakeServer server = FakeServer.start(IO_TIMEOUT)) {
+            assertThrows(IllegalArgumentException.class, () -> server.sendCommand(" "));
+            assertThrows(IllegalArgumentException.class, () -> server.sendCommand("LOCK\nUNLOCK"));
+
+            try (FakeClient client = FakeClient.connect(
+                    InetAddress.getLoopbackAddress(), server.port(), IO_TIMEOUT, IO_TIMEOUT)) {
+                assertThrows(IllegalArgumentException.class, () -> client.sendHeartbeat("line1\nline2"));
+                assertThrows(IllegalArgumentException.class, () -> client.acknowledge(" "));
+            }
+        }
+    }
+
+    @Test
+    void rejectsUnexpectedInboundMessagePrefixes() throws Exception {
+        try (FakeServer server = FakeServer.start(IO_TIMEOUT);
+             Socket clientSocket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            server.acceptClient();
+            writeLine(clientSocket, "NOT_HEARTBEAT payload");
+
+            assertThrows(IOException.class, server::receiveHeartbeat);
+        }
+
+        try (ServerSocket serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+             FakeClient client = FakeClient.connect(
+                     InetAddress.getLoopbackAddress(), serverSocket.getLocalPort(), IO_TIMEOUT, IO_TIMEOUT);
+             Socket acceptedSocket = serverSocket.accept()) {
+            writeLine(acceptedSocket, "NOT_COMMAND payload");
+
+            assertThrows(IOException.class, client::receiveCommand);
+        }
     }
 
     @Test
@@ -110,5 +150,13 @@ class FakeClientServerTest {
             client.close();
             assertTrue(client.isClosed());
         }
+    }
+
+    private static void writeLine(Socket socket, String message) throws IOException {
+        BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+        writer.write(message);
+        writer.newLine();
+        writer.flush();
     }
 }
