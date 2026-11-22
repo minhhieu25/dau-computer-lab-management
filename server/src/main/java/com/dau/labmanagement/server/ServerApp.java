@@ -3,6 +3,7 @@ package com.dau.labmanagement.server;
 import com.dau.labmanagement.server.config.AppConfig;
 import com.dau.labmanagement.server.config.DataSourceProvider;
 import com.dau.labmanagement.server.config.DatabaseMigrator;
+import com.dau.labmanagement.server.network.ServerNetworkRuntime;
 import com.zaxxer.hikari.HikariDataSource;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -10,6 +11,8 @@ import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * Entry point of the PC Server (teacher/admin desktop application).
@@ -22,16 +25,26 @@ import org.slf4j.LoggerFactory;
 public class ServerApp extends Application {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerApp.class);
+    private ServerNetworkRuntime networkRuntime;
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws IOException {
         bootstrapDatabase();
+        networkRuntime = new ServerNetworkRuntime();
+        networkRuntime.start();
         Label placeholder = new Label("PC Server - scaffold (MVC shell)");
         placeholder.setId("placeholder-label");
         Scene scene = new Scene(placeholder, 800, 600);
         stage.setTitle("DAU Computer Lab Management - Server");
         stage.setScene(scene);
         stage.show();
+    }
+
+    @Override
+    public void stop() throws IOException {
+        if (networkRuntime != null) {
+            networkRuntime.close();
+        }
     }
 
     /**
