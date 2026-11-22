@@ -17,4 +17,5 @@ CLAUDE.md
 
 .gradle/
 **/build/
+**/bin/
 

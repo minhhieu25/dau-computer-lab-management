@@ -38,9 +38,9 @@ class DatabaseMigrationIT {
         try (EmbeddedPostgres postgres = EmbeddedPostgres.builder().start()) {
             DataSource dataSource = postgres.getPostgresDatabase();
 
-            assertEquals(2, DatabaseMigrator.migrate(dataSource, "filesystem:db/migration"),
+            assertEquals(2, DatabaseMigrator.migrate(dataSource, "classpath:db/migration"),
                     "V1__schema.sql and V2__seed.sql must both apply");
-            assertEquals(0, DatabaseMigrator.migrate(dataSource, "filesystem:db/migration"),
+            assertEquals(0, DatabaseMigrator.migrate(dataSource, "classpath:db/migration"),
                     "re-running migrations must be a no-op (Flyway idempotency)");
 
             try (Connection connection = dataSource.getConnection()) {

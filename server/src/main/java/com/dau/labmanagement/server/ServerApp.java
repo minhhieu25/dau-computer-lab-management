@@ -49,7 +49,7 @@ public class ServerApp extends Application {
             int applied = DatabaseMigrator.migrate(dataSource, config.migrationLocations());
             LOG.info("Database ready at {}; Flyway applied {} migration(s)", config.dbUrl(), applied);
         } catch (Exception e) {
-            LOG.error("Database bootstrap failed: {}", e.getMessage());
+            LOG.error("Database bootstrap failed", e);
         }
     }
 

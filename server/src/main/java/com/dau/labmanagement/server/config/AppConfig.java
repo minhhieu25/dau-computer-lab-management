@@ -10,8 +10,7 @@ package com.dau.labmanagement.server.config;
  *   <li>{@code DB_USER} — database user, default {@code postgres}</li>
  *   <li>{@code DB_PASSWORD} — database password, required for database work</li>
  *   <li>{@code DB_MIGRATION_LOCATIONS} — Flyway locations, default
- *       {@code filesystem:db/migration} (relative to the repo root, which is
- *       the working directory configured for run/test Gradle tasks)</li>
+ *       {@code classpath:db/migration}</li>
  * </ul>
  */
 public final class AppConfig {
@@ -38,7 +37,7 @@ public final class AppConfig {
                 envOrDefault("DB_URL", "jdbc:postgresql://localhost:5433/lab_management"),
                 envOrDefault("DB_USER", "postgres"),
                 System.getenv("DB_PASSWORD"),
-                envOrDefault("DB_MIGRATION_LOCATIONS", "filesystem:db/migration"));
+                envOrDefault("DB_MIGRATION_LOCATIONS", "classpath:db/migration"));
     }
 
     public String dbUrl() {

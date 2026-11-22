@@ -5,7 +5,7 @@ import org.flywaydb.core.Flyway;
 import javax.sql.DataSource;
 
 /**
- * Runs Flyway migrations from db/migration (repo root) at server startup.
+ * Runs Flyway migrations from the server classpath at startup.
  * Migrations are versioned V1__, V2__, ... and applied exactly once each.
  */
 public final class DatabaseMigrator {
@@ -18,7 +18,7 @@ public final class DatabaseMigrator {
      * Applies all pending migrations.
      *
      * @param dataSource the target database
-     * @param locations  comma-separated Flyway locations, e.g. "filesystem:db/migration"
+     * @param locations  comma-separated Flyway locations, e.g. "classpath:db/migration"
      * @return the number of migrations applied by this call (0 when up to date)
      */
     public static int migrate(DataSource dataSource, String locations) {
