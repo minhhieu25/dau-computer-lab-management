@@ -8,6 +8,10 @@ javafx {
     modules = listOf("javafx.controls", "javafx.fxml")
 }
 
+application {
+    mainClass.set("com.dau.labmanagement.client.ClientApp")
+}
+
 dependencies {
     implementation(project(":shared"))
 
@@ -16,8 +20,4 @@ dependencies {
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-application {
-    mainClass = "com.dau.labmanagement.client.ClientApp"
 }

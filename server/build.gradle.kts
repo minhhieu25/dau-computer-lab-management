@@ -27,7 +27,7 @@ javafx {
 }
 
 application {
-    mainClass = "com.dau.labmanagement.server.ServerApp"
+    mainClass.set("com.dau.labmanagement.server.ServerApp")
 }
 
 tasks.withType<Test>().configureEach {
