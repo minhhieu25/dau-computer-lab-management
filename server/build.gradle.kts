@@ -1,5 +1,24 @@
 plugins {
+    application
     alias(libs.plugins.javafx)
+}
+
+dependencies {
+    implementation(project(":shared"))
+
+    implementation(libs.jdbi3.core)
+    implementation(libs.jdbi3.sqlobject)
+    implementation(libs.hikari)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.postgres)
+    runtimeOnly(libs.postgresql)
+
+    implementation(libs.slf4j.api)
+    runtimeOnly(libs.logback.classic)
+
+    testImplementation(libs.zonky.embedded.postgres)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 javafx {
@@ -7,15 +26,10 @@ javafx {
     modules = listOf("javafx.controls", "javafx.fxml")
 }
 
-dependencies {
-    implementation(project(":shared"))
+application {
+    mainClass.set("com.dau.labmanagement.server.ServerApp")
+}
 
-    // JUnit 5
-    testImplementation(libs.junit.jupiter)
-
-    // PostgreSQL JDBC
-    testImplementation("org.postgresql:postgresql:42.7.7")
-
-    // Zonky Embedded PostgreSQL
-    testImplementation("io.zonky.test:embedded-postgres:2.1.0")
+tasks.withType<Test>().configureEach {
+    include("**/*Test.class", "**/*Tests.class", "**/*TestCase.class", "**/*IT.class")
 }

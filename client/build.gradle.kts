@@ -1,4 +1,5 @@
 plugins {
+    application
     alias(libs.plugins.javafx)
 }
 
@@ -7,7 +8,16 @@ javafx {
     modules = listOf("javafx.controls", "javafx.fxml")
 }
 
+application {
+    mainClass.set("com.dau.labmanagement.client.ClientApp")
+}
+
 dependencies {
     implementation(project(":shared"))
+
+    implementation(libs.slf4j.api)
+    runtimeOnly(libs.logback.classic)
+
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

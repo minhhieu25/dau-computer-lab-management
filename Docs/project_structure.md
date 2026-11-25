@@ -2,7 +2,7 @@
 
 ## 1. Mục đích
 
-Tài liệu này mô tả cây thư mục cho Hệ thống Quản lý & Giám sát Phòng máy theo Java 21, JavaFX 21, Gradle multi-module và PostgreSQL. Gradle scaffold đã được tạo với Wrapper 8.14.3 và Java toolchain 21; các lớp ứng dụng sẽ được bổ sung theo phân công chức năng.
+Tài liệu này mô tả cây thư mục cho Hệ thống Quản lý & Giám sát Phòng máy theo Java 21, JavaFX 21, Gradle multi-module và PostgreSQL. Gradle scaffold dùng module trực tiếp tại project root; FND-02 bổ sung cấu hình database, mapping Java và Flyway migrations trong module `server`.
 
 Ứng dụng Server và Client dùng MVC. `shared` là thư viện dùng chung, không phải một ứng dụng MVC.
 
