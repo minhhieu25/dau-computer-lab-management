@@ -2,9 +2,29 @@
 javafx-runtime = "21.0.7"
 javafx-plugin = "0.1.0"
 junit = "5.11.4"
+junit-platform = "1.11.4"
+jackson = "2.23.0"
+jdbi = "3.55.0"
+hikari = "6.3.3"
+flyway = "11.20.3"
+postgresql = "42.7.14"
+slf4j = "2.0.20"
+logback = "1.5.38"
+zonky = "2.2.2"
 
 [libraries]
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
+zonky-embedded-postgres = { module = "io.zonky.test:embedded-postgres", version.ref = "zonky" }
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 [plugins]
 javafx = { id = "org.openjfx.javafxplugin", version.ref = "javafx-plugin" }

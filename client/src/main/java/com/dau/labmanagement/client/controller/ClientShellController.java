@@ -10,6 +10,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import java.io.IOException;
 import java.net.URL;
+import javafx.application.Platform;
 
 /** Client shell navigation; real authentication and networking are out of scope. */
 public final class ClientShellController {
@@ -81,6 +82,14 @@ public final class ClientShellController {
         loginNav.getStyleClass().remove("nav-active");
         homeNav.getStyleClass().remove("nav-active");
         selected.getStyleClass().add("nav-active");
+    }
+
+    /** Updates the network status shown in the Client shell. */
+    public void setNetworkStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return;
+        }
+        Platform.runLater(() -> clientStatus.setText("Client · " + status));
     }
 
     /** Replaces the current Client screen without creating another stage. */

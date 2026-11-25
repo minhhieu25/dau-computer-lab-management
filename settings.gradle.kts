@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "dau-computer-lab-management"
 
 include("shared", "server", "client", "shared-test")
+
