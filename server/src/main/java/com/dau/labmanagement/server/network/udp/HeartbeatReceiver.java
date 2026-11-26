@@ -1,5 +1,6 @@
 package com.dau.labmanagement.server.network.udp;
 
+import com.dau.labmanagement.server.model.dao.MachineDao;
 import com.dau.labmanagement.shared.protocol.MessageType;
 import com.dau.labmanagement.shared.protocol.ProtocolFrame;
 import com.dau.labmanagement.shared.protocol.ProtocolVersion;
@@ -8,6 +9,7 @@ import com.dau.labmanagement.shared.protocol.codec.UdpFrameCodec;
 import com.dau.labmanagement.shared.protocol.message.AckMessage;
 import com.dau.labmanagement.shared.protocol.message.HeartbeatMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.time.OffsetDateTime;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class HeartbeatReceiver implements AutoCloseable {
@@ -23,15 +28,17 @@ public final class HeartbeatReceiver implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(HeartbeatReceiver.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private final Jdbi jdbi;
     private final DatagramSocket socket;
     private final AtomicBoolean running = new AtomicBoolean();
     private Thread receiverThread;
 
-    public HeartbeatReceiver() throws SocketException {
-        this(new InetSocketAddress(PortConstants.UDP_HEARTBEAT));
+    public HeartbeatReceiver(Jdbi jdbi) throws SocketException {
+        this(jdbi, new InetSocketAddress(PortConstants.UDP_HEARTBEAT));
     }
 
-    public HeartbeatReceiver(InetSocketAddress bindAddress) throws SocketException {
+    public HeartbeatReceiver(Jdbi jdbi, InetSocketAddress bindAddress) throws SocketException {
+        this.jdbi = Objects.requireNonNull(jdbi, "jdbi");
         socket = new DatagramSocket(bindAddress);
     }
 
@@ -61,6 +68,21 @@ public final class HeartbeatReceiver implements AutoCloseable {
                 }
 
                 HeartbeatMessage heartbeat = UdpFrameCodec.payloadAs(frame, HeartbeatMessage.class);
+                UUID machineGuid;
+                try {
+                    machineGuid = UUID.fromString(heartbeat.clientId());
+                } catch (IllegalArgumentException | NullPointerException exception) {
+                    LOG.warn("Ignoring heartbeat with invalid client ID from {}",
+                            packet.getSocketAddress());
+                    continue;
+                }
+                int updated = jdbi.withExtension(MachineDao.class,
+                        dao -> dao.updateLastSeen(machineGuid, OffsetDateTime.now()));
+                if (updated == 0) {
+                    LOG.debug("Ignoring heartbeat from unregistered client {}", machineGuid);
+                    continue;
+                }
+
                 AckMessage acknowledgment = new AckMessage(
                         heartbeat.clientId(), heartbeat.sequence(), System.currentTimeMillis());
                 byte[] response = UdpFrameCodec.encode(new ProtocolFrame(
@@ -77,6 +99,10 @@ public final class HeartbeatReceiver implements AutoCloseable {
             } catch (IOException exception) {
                 if (running.get()) {
                     LOG.warn("Ignoring malformed UDP heartbeat datagram", exception);
+                }
+            } catch (RuntimeException exception) {
+                if (running.get()) {
+                    LOG.error("Could not update machine heartbeat state", exception);
                 }
             }
         }

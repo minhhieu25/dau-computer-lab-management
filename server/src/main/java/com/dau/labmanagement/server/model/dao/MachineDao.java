@@ -27,6 +27,17 @@ public interface MachineDao {
                 @Bind("seatLabel") String seatLabel);
 
     @SqlQuery("""
+            INSERT INTO machine (machine_guid, hostname, ip_address, seat_label)
+            VALUES (:machineGuid, :hostname, :ipAddress, :seatLabel)
+            ON CONFLICT (machine_guid) DO UPDATE
+            SET hostname = EXCLUDED.hostname, ip_address = EXCLUDED.ip_address
+            RETURNING machine_id""")
+    long upsert(@Bind("machineGuid") UUID machineGuid,
+                @Bind("hostname") String hostname,
+                @Bind("ipAddress") String ipAddress,
+                @Bind("seatLabel") String seatLabel);
+
+    @SqlQuery("""
             SELECT machine_id, machine_guid, hostname, ip_address, seat_label,
                    last_seen_at, last_rtt_ms, packet_loss_percent
             FROM machine
@@ -55,6 +66,23 @@ public interface MachineDao {
                         @Bind("lastSeenAt") OffsetDateTime lastSeenAt,
                         @Bind("lastRttMs") Integer lastRttMs,
                         @Bind("packetLossPercent") BigDecimal packetLossPercent);
+
+    @SqlUpdate("""
+            UPDATE machine
+            SET last_seen_at = :lastSeenAt
+            WHERE machine_guid = :machineGuid""")
+    int updateLastSeen(@Bind("machineGuid") UUID machineGuid,
+                       @Bind("lastSeenAt") OffsetDateTime lastSeenAt);
+
+    @SqlQuery("""
+            SELECT EXISTS (
+                SELECT 1
+                FROM machine
+                WHERE machine_guid = :machineGuid
+                  AND last_seen_at > :offlineSince
+            )""")
+    boolean isOnline(@Bind("machineGuid") UUID machineGuid,
+                     @Bind("offlineSince") OffsetDateTime offlineSince);
 
     @SqlUpdate("UPDATE machine SET seat_label = :seatLabel WHERE machine_id = :machineId")
     int updateSeatLabel(@Bind("machineId") long machineId, @Bind("seatLabel") String seatLabel);

@@ -22,3 +22,11 @@
 .status-unstable { -fx-text-fill: #D97706; -fx-font-weight: bold; }
 .status-offline { -fx-text-fill: #DC2626; -fx-font-weight: bold; }
 .primary-button { -fx-background-color: #1E40AF; -fx-text-fill: white; -fx-padding: 10px 18px; -fx-cursor: hand; }
+.login-layout { -fx-alignment: CENTER; -fx-padding: 18px 0; }
+.login-icon { -fx-background-color: #0F766E; -fx-background-radius: 10px; -fx-padding: 10px; -fx-text-fill: white; -fx-font-size: 20px; }
+.login-heading { -fx-text-fill: #0F766E; -fx-font-size: 20px; -fx-font-weight: bold; }
+.field-label { -fx-text-fill: #64748B; -fx-font-weight: bold; }
+.login-note { -fx-padding: 22px; }
+.login-feedback { -fx-padding: 8px; -fx-background-radius: 6px; }
+.login-success { -fx-text-fill: #166534; -fx-background-color: #F0FDF4; -fx-padding: 8px; -fx-background-radius: 6px; }
+.login-error { -fx-text-fill: #B91C1C; -fx-background-color: #FEF2F2; -fx-padding: 8px; -fx-background-radius: 6px; }

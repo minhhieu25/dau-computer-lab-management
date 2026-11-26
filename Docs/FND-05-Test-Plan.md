@@ -45,7 +45,7 @@ Test fixture dung timeout cho connect, accept va read; cac test duoc bao ve boi 
 
 ## 6. Test cases BR-01 den BR-10
 
-Tat ca BR case duoi day chua duoc thuc thi vi chuc nang/dependency chua san sang. Cac case ghi dependency ro rang, khong duoc xem la PASS.
+Cac BR case duoi day chi duoc danh dau PASS khi co ket qua chay thuc te. Hien tai SC_002 co ket qua rieng `BR09-SC002-IT-01`; cac case con lai van chua duoc thuc thi vi chuc nang/dependency chua san sang.
 
 | Test ID | BR ID | Loai | Tien dieu kien | Du lieu dau vao | Buoc thuc hien | Ket qua mong doi | Trang thai |
 |---|---|---|---|---|---|---|---|
@@ -58,6 +58,7 @@ Tat ca BR case duoi day chua duoc thuc thi vi chuc nang/dependency chua san sang
 | BR07-MT-01 | BR-07 | MT | FND-02 recording metadata/permission neu co; FND-03 live-view; UI Client | Yeu cau giam sat/ghi hinh; Admin; giang vien tao recording; giang vien khac | Bat/tat giam sat va ghi; kiem tra icon Client; thu truy cap recording theo role; kiem tra log va du lieu thu | Chi giam sat khi chu dong; icon/canh bao dung; video chi luu tren Server; Admin va dung giang vien duoc phep; khong ghi phim/am thanh/quet ngoai folder hoc tap; co audit log | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
 | BR08-IT-01 | BR-08 | IT, NT, MT | FND-03 metrics contract; file transfer va stream co san | File co dung luong biet truoc; heartbeat/video; cac may co RTT/loss khac nhau | Chay push/pull; doi chieu Mbps, phan tram, ETA; chay UDP; doi chieu RTT/loss/FPS/bandwidth | Don vi Mbps, MB/GB dung; metrics theo tung may/luong; % hoan thanh va ETA hop ly; RTT/loss/FPS/bandwidth duoc cap nhat | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
 | BR09-IT-01 | BR-09 | IT, MT | FND-02 schema/DAO; auth/role feature; Server va Client | Tai khoan Admin/Giang vien/Sinh vien; sai mat khau; tai khoan khoa; Client chua login | Dang nhap Server theo role; thu cac thao tac duoc/khong duoc phep; quan ly tai khoan; mo Client khong login | Server yeu cau dang nhap; chi giang vien dieu khien lop; Admin quan ly tai khoan; sinh vien chi dinh danh Client; may chua login van online | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FEATURE` |
+| BR09-SC002-IT-01 | BR-09 | IT, NT | FND-02 migrations/DAO; `LOGIN` / `LOGIN_ACK`; Client JavaFX; heartbeat UDP | Sinh vien active, locked, sai mat khau, MSSV khong ton tai va tai khoan teacher | Ket noi HELLO; gui heartbeat UDP va dang nhap that/bai tren TCP; doi chieu `machine.last_seen_at`, `student_session` voi user/machine; kiem tra UI success/error | Chi sinh vien active tao session dung user/machine; may Online theo heartbeat ca truoc login va sau login loi; qua nguong heartbeat thi Offline; UI hien thi dung danh tinh/loi | `PASS` |
 | BR10-IT-01 | BR-10 | IT, MT | FND-02 recording schema/DAO; recording/auth feature | Recording qua han/con han; Admin; giang vien tao; giang vien khac | Tao recording; xem list/replay/xoa theo role; doi retention; chay cleanup; kiem tra audit log | Admin xem/xoa tat ca; giang vien chi xem recording cua minh; qua han tu xoa theo retention; log day du nguoi/thoi diem/hanh dong; mac dinh 30 ngay | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FEATURE` |
 
 ## 7. Test cases FND-05 harness va PostgreSQL
@@ -79,7 +80,7 @@ Tat ca BR case duoi day chua duoc thuc thi vi chuc nang/dependency chua san sang
 - Tren nhanh FND-05 hien tai, migration/DAO FND-02 chua duoc tich hop. Remote `origin/feature/fnd-02-db-schema` co `db/migration/V1__schema.sql`, `V2__seed.sql`, cac DAO trong `modules/server/.../model/dao`, va `DatabaseMigrationIT`. Tuy nhien nhanh FND-02 dat Gradle module tai `modules/*`, khong trung layout root `shared/server/client/shared-test` cua nhanh nay; khong duoc copy/integrate code production FND-02 trong FND-05.
 - FND-02 remote chua co auth service xac thuc password/session; `UserDao.findActiveByUsername()` va `StudentSessionDao` la DAO, khong phai API dang nhap. `DatabaseMigrationIT` co hau to `IT`, va server build khong khai bao task integration-test rieng; can owner FND-02/FND-06 xac nhan cach chay.
 - Khong tao schema gia. CRUD/FK/constraint/rollback DAO tests tren nhanh hien tai van `BLOCKED_BY_FND_02`.
-- FND-03 chua co protocol/network implementation trong workspace tai thoi diem lap ke hoach. Harness loopback la fixture doc lap; BR test can contract that va dang cho FND-03.
+- SC_002 hien co LOGIN/LOGIN_ACK tren TCP va test tich hop voi migration/DAO that tren Embedded PostgreSQL; ket qua duoc ghi o `BR09-SC002-IT-01`. Cac case BR khac van cho feature tuong ung.
 - Kiem thu multicast, UDP quality, Windows input blocking, file lon, MP4 va retention can implementation va/hoac phong may that; khong the xac nhan bang loopback harness.
 - Cac test BR la ke hoach chua chay, khong phai ket qua nghiem thu. Cap nhat trang thai sau moi dot chay voi output Gradle thuc te.
 
@@ -94,3 +95,11 @@ Ngay 2026-11-22, voi Java 21 toolchain:
 | `gradlew.bat build` | BUILD SUCCESSFUL | Full multi-module build; cac test da chay o hai lenh tren |
 
 Tong test thuc thi: 12 passed, 0 failed, 0 skipped. Gradle co canh bao deprecated features, nhung khong anh huong ket qua build. Ket qua nay khong bao gom BR integration/network/manual tests hoac DAO tests dang bi chan.
+
+Ngay 2026-11-26, voi Java 21 toolchain:
+
+| Lenh | Ket qua | Test |
+|---|---|---|
+| `.\gradlew.bat build` | BUILD SUCCESSFUL | 28 passed, 0 failed, 0 errors, 0 skipped tren client, server, shared va shared-test |
+
+Dot chay nay bao gom `ClientSessionHandlerTest` (Embedded PostgreSQL + TCP loopback + UDP heartbeat/Online timeout), `HeartbeatReceiverTest` (heartbeat persist/ACK), `ClientNetworkRuntimeLoginTest` (beacon/HELLO/challenge login TCP), va `ClientShellControllerTest` (hien thi danh tinh hoac loi). `BR09-IT-01` van bi chan cho SC_001 va cac chuc nang quan tri; chi phan SC_002 trong dong test rieng duoc PASS.
