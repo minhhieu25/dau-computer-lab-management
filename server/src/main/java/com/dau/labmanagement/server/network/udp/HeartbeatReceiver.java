@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -24,6 +26,7 @@ public final class HeartbeatReceiver implements AutoCloseable {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final DatagramSocket socket;
+    private final Consumer<HeartbeatMessage> heartbeatObserver;
     private final AtomicBoolean running = new AtomicBoolean();
     private Thread receiverThread;
 
@@ -32,6 +35,17 @@ public final class HeartbeatReceiver implements AutoCloseable {
     }
 
     public HeartbeatReceiver(InetSocketAddress bindAddress) throws SocketException {
+        this(bindAddress, heartbeat -> {});
+    }
+
+    public HeartbeatReceiver(
+            InetSocketAddress bindAddress,
+            Consumer<HeartbeatMessage> heartbeatObserver)
+            throws SocketException {
+
+        this.heartbeatObserver =
+                Objects.requireNonNull(heartbeatObserver);
+
         socket = new DatagramSocket(bindAddress);
     }
 
@@ -61,6 +75,12 @@ public final class HeartbeatReceiver implements AutoCloseable {
                 }
 
                 HeartbeatMessage heartbeat = UdpFrameCodec.payloadAs(frame, HeartbeatMessage.class);
+                try {
+                    heartbeatObserver.accept(heartbeat);
+                } catch (RuntimeException exception) {
+                    LOG.warn("Invalid heartbeat metrics", exception);
+                }
+
                 AckMessage acknowledgment = new AckMessage(
                         heartbeat.clientId(), heartbeat.sequence(), System.currentTimeMillis());
                 byte[] response = UdpFrameCodec.encode(new ProtocolFrame(

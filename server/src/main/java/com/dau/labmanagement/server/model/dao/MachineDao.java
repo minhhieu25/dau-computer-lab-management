@@ -58,4 +58,40 @@ public interface MachineDao {
 
     @SqlUpdate("UPDATE machine SET seat_label = :seatLabel WHERE machine_id = :machineId")
     int updateSeatLabel(@Bind("machineId") long machineId, @Bind("seatLabel") String seatLabel);
+
+    @SqlUpdate("""
+            INSERT INTO machine (
+                machine_guid,
+                hostname,
+                ip_address,
+                last_seen_at,
+                last_rtt_ms,
+                packet_loss_percent
+            )
+            VALUES (
+                :machineGuid,
+                :hostname,
+                :ipAddress,
+                :lastSeenAt,
+                :lastRttMs,
+                :packetLossPercent
+            )
+            ON CONFLICT (machine_guid)
+            DO UPDATE SET
+                hostname = EXCLUDED.hostname,
+                ip_address = EXCLUDED.ip_address,
+                last_seen_at = EXCLUDED.last_seen_at,
+                last_rtt_ms = EXCLUDED.last_rtt_ms,
+                packet_loss_percent = EXCLUDED.packet_loss_percent
+            WHERE machine.last_seen_at IS NULL
+               OR machine.last_seen_at < EXCLUDED.last_seen_at
+            """)
+    int upsertDashboardMachine(
+            @Bind("machineGuid") UUID machineGuid,
+            @Bind("hostname") String hostname,
+            @Bind("ipAddress") String ipAddress,
+            @Bind("lastSeenAt") OffsetDateTime lastSeenAt,
+            @Bind("lastRttMs") Integer lastRttMs,
+            @Bind("packetLossPercent") BigDecimal packetLossPercent
+    );
 }

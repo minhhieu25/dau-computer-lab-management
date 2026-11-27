@@ -1,5 +1,6 @@
 package com.dau.labmanagement.server.controller;
 
+import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -25,6 +26,12 @@ public final class ServerShellController {
     private final Map<String, String> teacherPages = new LinkedHashMap<>();
     private final Map<String, String> adminPages = new LinkedHashMap<>();
     private String currentPage;
+    private MachineSessionRegistry machineRegistry;
+
+    public void setMachineRegistry(MachineSessionRegistry registry) {
+        this.machineRegistry = registry;
+        renderNavigation();
+    }
 
     @FXML
     private void initialize() {
@@ -58,7 +65,16 @@ public final class ServerShellController {
             button.setOnAction(event -> {
                 navigation.getChildren().forEach(node -> node.getStyleClass().remove("nav-active"));
                 button.getStyleClass().add("nav-active");
-                showPlaceholder(title, description);
+                if (!admin
+                        && description.startsWith("SC-003")
+                        && machineRegistry != null) {
+                    currentPage = title;
+                    showContent(
+                            new TeacherDashboardView(machineRegistry),
+                            title);
+                } else {
+                    showPlaceholder(title, description);
+                }
             });
             navigation.getChildren().add(button);
         });

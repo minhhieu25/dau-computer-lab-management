@@ -5,8 +5,11 @@ import com.dau.labmanagement.server.config.DataSourceProvider;
 import com.dau.labmanagement.server.config.DatabaseMigrator;
 import com.dau.labmanagement.server.network.ServerNetworkRuntime;
 import com.zaxxer.hikari.HikariDataSource;
+import com.dau.labmanagement.server.config.JdbiProvider;
+import com.dau.labmanagement.server.model.service.dashboard.DashboardDatabaseService;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import com.dau.labmanagement.server.controller.ServerShellController;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -22,6 +25,8 @@ public final class ServerApp extends Application {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerApp.class);
     private ServerNetworkRuntime networkRuntime;
+    private HikariDataSource dataSource;
+    private DashboardDatabaseService dashboardDatabaseService;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -29,7 +34,24 @@ public final class ServerApp extends Application {
         networkRuntime = new ServerNetworkRuntime();
         networkRuntime.start();
 
-        Parent root = FXMLLoader.load(ServerApp.class.getResource("/fxml/server-shell.fxml"));
+        if (dataSource != null) {
+            dashboardDatabaseService =
+                    new DashboardDatabaseService(
+                            JdbiProvider.create(dataSource),
+                            networkRuntime.getMachineRegistry());
+
+            dashboardDatabaseService.start();
+        }
+
+        FXMLLoader loader = new FXMLLoader(
+                ServerApp.class.getResource("/fxml/server-shell.fxml"));
+
+        Parent root = loader.load();
+
+        ServerShellController controller = loader.getController();
+
+        controller.setMachineRegistry(
+                networkRuntime.getMachineRegistry());
         Scene scene = new Scene(root, 1180, 760);
         scene.getStylesheets().add(ServerApp.class.getResource("/css/server.css").toExternalForm());
         stage.setTitle("DAU Lab Management - Server");
@@ -41,10 +63,22 @@ public final class ServerApp extends Application {
 
     @Override
     public void stop() throws IOException {
-        if (networkRuntime != null) {
-            networkRuntime.close();
+
+        if (dashboardDatabaseService != null) {
+            dashboardDatabaseService.close();
+        }
+
+        try {
+            if (networkRuntime != null) {
+                networkRuntime.close();
+            }
+        } finally {
+            if (dataSource != null) {
+                dataSource.close();
+            }
         }
     }
+
 
     private void bootstrapDatabase() {
         AppConfig config = AppConfig.fromEnv();
@@ -52,11 +86,17 @@ public final class ServerApp extends Application {
             LOG.warn("DB_PASSWORD is not set; skipping database bootstrap");
             return;
         }
-        try (HikariDataSource dataSource = DataSourceProvider.create(config)) {
+        try {
+            dataSource = DataSourceProvider.create(config);
             int applied = DatabaseMigrator.migrate(dataSource, config.migrationLocations());
             LOG.info("Database ready at {}; Flyway applied {} migration(s)", config.dbUrl(), applied);
         } catch (Exception e) {
             LOG.error("Database bootstrap failed", e);
+
+            if (dataSource != null) {
+                dataSource.close();
+                dataSource = null;
+            }
         }
     }
 

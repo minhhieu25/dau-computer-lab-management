@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dau.labmanagement.shared.util.NetworkQualityTracker;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -33,6 +34,7 @@ public final class HeartbeatMonitor implements AutoCloseable {
     private final Duration acknowledgmentTimeout;
     private final Runnable connectionLostHandler;
     private final DatagramSocket socket;
+    private final NetworkQualityTracker qualityTracker = new NetworkQualityTracker();
     private final AtomicBoolean running = new AtomicBoolean();
     private Thread monitorThread;
 
@@ -68,10 +70,13 @@ public final class HeartbeatMonitor implements AutoCloseable {
             long cycleStarted = System.nanoTime();
             sequence++;
             try {
+                long sentNanos = System.nanoTime();
                 sendHeartbeat(sequence);
                 if (receiveAcknowledgment(sequence)) {
+                    qualityTracker.recordSuccess(sentNanos, System.nanoTime());
                     missedAcknowledgments = 0;
                 } else {
+                    qualityTracker.recordFailure();
                     missedAcknowledgments++;
                     LOG.warn("Missed heartbeat acknowledgment {}/{}",
                             missedAcknowledgments, MISSED_ACK_LIMIT);
@@ -101,7 +106,11 @@ public final class HeartbeatMonitor implements AutoCloseable {
 
     private void sendHeartbeat(long sequence) throws IOException {
         HeartbeatMessage heartbeat = new HeartbeatMessage(
-                clientId, sequence, System.currentTimeMillis());
+                clientId,
+                sequence,
+                System.currentTimeMillis(),
+                qualityTracker.getRttMillis(),
+                qualityTracker.getPacketLossPercent());
         byte[] data = UdpFrameCodec.encode(new ProtocolFrame(
                 MessageType.HEARTBEAT,
                 ProtocolVersion.CURRENT,

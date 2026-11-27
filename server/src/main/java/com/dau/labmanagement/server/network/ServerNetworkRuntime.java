@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
+import java.net.InetSocketAddress;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.UUID;
@@ -24,6 +26,13 @@ public final class ServerNetworkRuntime implements AutoCloseable {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final String serverId = UUID.randomUUID().toString();
+    private final MachineSessionRegistry machineRegistry =
+            new MachineSessionRegistry();
+
+    public MachineSessionRegistry getMachineRegistry() {
+        return machineRegistry;
+    }
+
     private TcpServer tcpServer;
     private HeartbeatReceiver heartbeatReceiver;
     private BeaconBroadcaster beaconBroadcaster;
@@ -31,7 +40,13 @@ public final class ServerNetworkRuntime implements AutoCloseable {
     public void start() throws IOException {
         tcpServer = new TcpServer(PortConstants.TCP_SERVER, this::handleTcpConnection);
         try {
-            heartbeatReceiver = new HeartbeatReceiver();
+            heartbeatReceiver = new HeartbeatReceiver(
+                    new InetSocketAddress(PortConstants.UDP_HEARTBEAT),
+                    heartbeat -> machineRegistry.heartbeat(
+                            heartbeat.clientId(),
+                            heartbeat.sequence(),
+                            heartbeat.rttMillis(),
+                            heartbeat.packetLossPercent()));
             beaconBroadcaster = new BeaconBroadcaster(serverId, tcpServer.localPort());
             tcpServer.start();
             heartbeatReceiver.start();
@@ -58,7 +73,14 @@ public final class ServerNetworkRuntime implements AutoCloseable {
             throw new IOException("HELLO requires clientId and hostname");
         }
 
-        HelloAckMessage acknowledgment = new HelloAckMessage(serverId, ProtocolVersion.CURRENT);
+        machineRegistry.register(
+                hello.clientId(),
+                hello.hostname(),
+                socket.getInetAddress().getHostAddress(),
+                null);
+
+        HelloAckMessage acknowledgment =
+                new HelloAckMessage(serverId, ProtocolVersion.CURRENT);
         TcpFrameCodec.write(socket.getOutputStream(), new ProtocolFrame(
                 MessageType.HELLO_ACK,
                 ProtocolVersion.CURRENT,
