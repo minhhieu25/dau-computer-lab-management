@@ -7,7 +7,7 @@
             <children>
                 <Label text="DAU | MÁY SINH VIÊN" styleClass="brand" />
                 <Region HBox.hgrow="ALWAYS" />
-                <Label text="Client · FND-04" styleClass="header-caption" />
+                <Label text="Client · SC_002" styleClass="header-caption" />
             </children>
         </HBox>
     </top>
@@ -16,7 +16,7 @@
             <children>
                 <Label text="ĐIỀU HƯỚNG" styleClass="sidebar-title" />
                 <Button fx:id="loginNav" text="Đăng nhập" onAction="#showLogin" maxWidth="Infinity" styleClass="nav-button" />
-                <Button fx:id="homeNav" text="Trang chính" onAction="#showHome" maxWidth="Infinity" styleClass="nav-button" />
+                <Button fx:id="homeNav" text="Trạng thái định danh" onAction="#showIdentity" maxWidth="Infinity" styleClass="nav-button" />
                 <Region VBox.vgrow="ALWAYS" />
                 <Label text="Vai trò: Sinh viên" styleClass="sidebar-foot" />
             </children>
@@ -30,5 +30,5 @@
             </children>
         </VBox>
     </center>
-    <bottom><Label fx:id="clientStatus" text="Client · Chưa kết nối Server (minh họa)" styleClass="bottom-bar" /></bottom>
+    <bottom><Label fx:id="clientStatus" text="Client · Đang tìm Server..." styleClass="bottom-bar" /></bottom>
 </BorderPane>

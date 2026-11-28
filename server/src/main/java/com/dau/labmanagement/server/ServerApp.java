@@ -22,10 +22,9 @@ import java.io.IOException;
 /**
  * Entry point of the PC Server (teacher/admin desktop application).
  *
- * <p>Startup order: database (Flyway migrations + JDBI), network runtime, then
- * the SC_001 login window. The database is optional for the UI: when
- * {@code DB_PASSWORD} is not set the window still opens and every login attempt
- * is rejected with a configuration error instead of crashing the app.</p>
+ * <p>The login window remains available when the database is not configured.
+ * The network runtime starts only with a database-backed JDBI instance because
+ * Client login and heartbeat handling persist their state.</p>
  */
 public final class ServerApp extends Application {
 
@@ -44,12 +43,14 @@ public final class ServerApp extends Application {
         loginSessions = new LoginSessionRegistry();
         loginService = bootstrapDatabase();
 
-        networkRuntime = new ServerNetworkRuntime();
-        try {
-            networkRuntime.start();
-        } catch (IOException | RuntimeException exception) {
-            LOG.error("Network runtime failed to start; login stays available", exception);
-            networkRuntime = null;
+        if (jdbi != null) {
+            networkRuntime = new ServerNetworkRuntime(jdbi);
+            try {
+                networkRuntime.start();
+            } catch (IOException | RuntimeException exception) {
+                LOG.error("Network runtime failed to start; login stays available", exception);
+                networkRuntime = null;
+            }
         }
 
         navigator = new ServerNavigator(stage);

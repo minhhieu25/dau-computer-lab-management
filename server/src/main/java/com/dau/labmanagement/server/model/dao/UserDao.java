@@ -37,6 +37,13 @@ public interface UserDao {
     Optional<UserRow> findActiveByUsername(@Bind("username") String username);
 
     @SqlQuery("""
+            SELECT user_id, username, password_hash, full_name, role, status, created_at, deleted_at
+            FROM app_user
+            WHERE username = :username AND deleted_at IS NULL
+            FOR UPDATE""")
+    Optional<UserRow> findActiveByUsernameForUpdate(@Bind("username") String username);
+
+    @SqlQuery("""
             INSERT INTO app_user (username, password_hash, full_name, role, status)
             VALUES (:username, :passwordHash, :fullName, :role, :status)
             RETURNING user_id""")

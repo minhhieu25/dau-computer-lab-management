@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Objects;
 
@@ -77,6 +78,11 @@ public final class TcpServer implements AutoCloseable {
                 LOG.warn("TCP client {} disconnected with an I/O error",
                         socket.getRemoteSocketAddress(), exception);
             }
+        } catch (RuntimeException exception) {
+            if (running.get()) {
+                LOG.error("TCP client {} session handler failed",
+                        socket.getRemoteSocketAddress(), exception);
+            }
         } finally {
             clients.remove(socket);
         }
@@ -105,6 +111,26 @@ public final class TcpServer implements AutoCloseable {
         clientExecutor.shutdownNow();
         if (acceptThread != null) {
             acceptThread.interrupt();
+        }
+        try {
+            if (!clientExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                IOException terminationFailure =
+                        new IOException("TCP client handlers did not stop within 5 seconds");
+                if (closeFailure == null) {
+                    closeFailure = terminationFailure;
+                } else {
+                    closeFailure.addSuppressed(terminationFailure);
+                }
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            IOException terminationFailure =
+                    new IOException("Interrupted while stopping TCP client handlers", exception);
+            if (closeFailure == null) {
+                closeFailure = terminationFailure;
+            } else {
+                closeFailure.addSuppressed(terminationFailure);
+            }
         }
         if (closeFailure != null) {
             throw closeFailure;

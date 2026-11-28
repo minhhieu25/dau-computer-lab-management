@@ -1,11 +1,16 @@
 package com.dau.labmanagement.client.model.net;
 
 import com.dau.labmanagement.shared.protocol.MessageType;
+import com.dau.labmanagement.shared.protocol.PortConstants;
 import com.dau.labmanagement.shared.protocol.ProtocolFrame;
 import com.dau.labmanagement.shared.protocol.ProtocolVersion;
 import com.dau.labmanagement.shared.protocol.codec.TcpFrameCodec;
 import com.dau.labmanagement.shared.protocol.message.HelloAckMessage;
 import com.dau.labmanagement.shared.protocol.message.HelloMessage;
+import com.dau.labmanagement.shared.protocol.message.LoginAckMessage;
+import com.dau.labmanagement.shared.protocol.message.LoginMessage;
+import com.dau.labmanagement.shared.protocol.message.LoginStatus;
+import com.dau.labmanagement.shared.security.PasswordProof;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +18,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.security.GeneralSecurityException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,6 +33,7 @@ public final class ClientNetworkRuntime implements AutoCloseable {
 
     private final String clientId = UUID.randomUUID().toString();
     private final String hostname;
+    private final int beaconPort;
     private final Consumer<String> statusConsumer;
     private final AtomicBoolean connecting = new AtomicBoolean();
     private final AtomicBoolean running = new AtomicBoolean();
@@ -39,8 +47,16 @@ public final class ClientNetworkRuntime implements AutoCloseable {
     }
 
     public ClientNetworkRuntime(Consumer<String> statusConsumer, String hostname) {
+        this(statusConsumer, hostname, PortConstants.UDP_BEACON);
+    }
+
+    ClientNetworkRuntime(Consumer<String> statusConsumer, String hostname, int beaconPort) {
         this.statusConsumer = Objects.requireNonNull(statusConsumer, "statusConsumer");
         this.hostname = Objects.requireNonNull(hostname, "hostname");
+        if (beaconPort < 1 || beaconPort > 0xFFFF) {
+            throw new IllegalArgumentException("Beacon port must be between 1 and 65535");
+        }
+        this.beaconPort = beaconPort;
     }
 
     public void start() throws IOException {
@@ -48,7 +64,7 @@ public final class ClientNetworkRuntime implements AutoCloseable {
             throw new IllegalStateException("Client network runtime is already running");
         }
         try {
-            beaconListener = new BeaconListener(this::onBeacon);
+            beaconListener = new BeaconListener(beaconPort, this::onBeacon);
             beaconListener.start();
             statusConsumer.accept("Searching for the lab server...");
         } catch (IOException | RuntimeException exception) {
@@ -143,6 +159,89 @@ public final class ClientNetworkRuntime implements AutoCloseable {
         if (running.get()) {
             statusConsumer.accept("Server connection lost; waiting to reconnect...");
         }
+    }
+
+    /**
+     * Authenticates a student over the established TCP session without sending
+     * the password itself.
+     *
+     * @param studentId the student account ID
+     * @param password the password characters; cleared before this method returns
+     * @return the server's authentication result
+     * @throws IOException if the TCP session or login exchange fails
+     */
+    public LoginAckMessage loginStudent(String studentId, char[] password) throws IOException {
+        Objects.requireNonNull(password, "password");
+        try {
+            if (studentId == null || studentId.isBlank() || studentId.length() > 50
+                    || password.length == 0) {
+                throw new IllegalArgumentException("Student ID and password are required");
+            }
+            String normalizedStudentId = studentId.trim();
+            TcpClient client = tcpClient;
+            if (!running.get() || client == null) {
+                throw new IOException("Client is not connected to the server");
+            }
+
+            synchronized (client) {
+                if (client != tcpClient) {
+                    throw new IOException("Server connection changed; please retry login");
+                }
+                client.send(new ProtocolFrame(
+                        MessageType.LOGIN,
+                        ProtocolVersion.CURRENT,
+                        OBJECT_MAPPER.valueToTree(
+                                new LoginMessage(normalizedStudentId, null, null))));
+                LoginAckMessage challenge = readLoginAck(client);
+                if (challenge.status() == LoginStatus.REJECTED) {
+                    return challenge;
+                }
+                if (challenge.status() != LoginStatus.CHALLENGE
+                        || challenge.nonce() == null || challenge.salt() == null
+                        || challenge.iterations() < 1) {
+                    throw new IOException("Server returned an invalid login challenge");
+                }
+
+                byte[] key = null;
+                try {
+                    key = PasswordProof.deriveKey(
+                            password, challenge.salt(), challenge.iterations());
+                    String proof = PasswordProof.createProof(key, challenge.nonce());
+                    client.send(new ProtocolFrame(
+                            MessageType.LOGIN,
+                            ProtocolVersion.CURRENT,
+                            OBJECT_MAPPER.valueToTree(new LoginMessage(
+                                    normalizedStudentId, challenge.nonce(), proof))));
+                } catch (GeneralSecurityException | IllegalArgumentException exception) {
+                    throw new IOException("Could not create the student login proof", exception);
+                } finally {
+                    if (key != null) {
+                        Arrays.fill(key, (byte) 0);
+                    }
+                }
+
+                LoginAckMessage result = readLoginAck(client);
+                if (result.status() != LoginStatus.AUTHENTICATED
+                        && result.status() != LoginStatus.REJECTED) {
+                    throw new IOException("Server returned an invalid login result");
+                }
+                return result;
+            }
+        } catch (IOException exception) {
+            onConnectionLost();
+            throw exception;
+        } finally {
+            Arrays.fill(password, '\0');
+        }
+    }
+
+    private static LoginAckMessage readLoginAck(TcpClient client) throws IOException {
+        ProtocolFrame frame = client.receive();
+        if (frame == null || frame.type() != MessageType.LOGIN_ACK
+                || frame.version() != ProtocolVersion.CURRENT) {
+            throw new IOException("Server did not return a valid LOGIN_ACK");
+        }
+        return TcpFrameCodec.payloadAs(frame, LoginAckMessage.class);
     }
 
     private static String resolveHostname() {

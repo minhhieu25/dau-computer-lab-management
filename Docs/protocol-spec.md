@@ -86,6 +86,24 @@ Server replies with `HELLO_ACK`; a version mismatch or invalid first message
 causes the connection to be closed. Login is a later exchange and does not
 change the meaning of this handshake.
 
+### Student identity login
+
+Login uses the already assigned `LOGIN` / `LOGIN_ACK` codes on the established
+TCP connection. The Client first sends `LOGIN` with `studentId`; the Server
+responds with `LOGIN_ACK` status `CHALLENGE`, a one-time 32-byte nonce, the
+account's PBKDF2 salt, and its iteration count. For accounts that cannot log
+in, the Server sends a decoy challenge so the response does not disclose
+whether an account exists.
+
+The Client derives a 256-bit key with `PBKDF2WithHmacSHA256` from the entered
+password and challenge parameters, then sends a second `LOGIN` containing
+`studentId`, `nonce`, and `proof` (`HMAC-SHA256(key, nonce)`). The password is
+never sent. The Server verifies the proof against the stored password hash and
+only accepts active student accounts. `LOGIN_ACK` then returns either
+`AUTHENTICATED` with the student session ID, MSSV, and display name, or
+`REJECTED` with a generic authentication error. A rejected login does not close
+the TCP session or change the machine's Online state.
+
 ## 6. Heartbeat
 
 | Message | Transport | Direction | Payload |
@@ -99,6 +117,11 @@ sequence as stale and ignores it. Three consecutive missed acknowledgments
 mark the connection as lost; higher-level Client features must then unlock any
 local controls, exit focus mode, and stop active streams. This transport layer
 reports loss but does not implement those feature-specific actions.
+
+The Server updates `machine.last_seen_at` for a registered `clientId` before
+returning its ACK. A machine is considered Online while its last heartbeat is
+within the 30-second offline threshold; student authentication is independent
+of this state.
 
 ## 7. Ports
 
