@@ -1,5 +1,6 @@
 package com.dau.labmanagement.server.network;
 
+import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
 import com.dau.labmanagement.server.network.tcp.ClientSessionHandler;
 import com.dau.labmanagement.server.network.tcp.TcpServer;
 import com.dau.labmanagement.server.network.udp.BeaconBroadcaster;
@@ -16,8 +17,11 @@ import java.util.UUID;
 public final class ServerNetworkRuntime implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerNetworkRuntime.class);
+
     private final String serverId = UUID.randomUUID().toString();
     private final Jdbi jdbi;
+    private final MachineSessionRegistry machineRegistry = new MachineSessionRegistry();
+
     private TcpServer tcpServer;
     private HeartbeatReceiver heartbeatReceiver;
     private BeaconBroadcaster beaconBroadcaster;
@@ -26,11 +30,29 @@ public final class ServerNetworkRuntime implements AutoCloseable {
         this.jdbi = Objects.requireNonNull(jdbi, "jdbi");
     }
 
+    public MachineSessionRegistry getMachineRegistry() {
+        return machineRegistry;
+    }
+
     public void start() throws IOException {
         tcpServer = new TcpServer(
-                PortConstants.TCP_SERVER, new ClientSessionHandler(jdbi, serverId));
+                PortConstants.TCP_SERVER,
+                new ClientSessionHandler(
+                        jdbi,
+                        serverId,
+                        (hello, ipAddress) -> machineRegistry.register(
+                                hello.clientId(),
+                                hello.hostname(),
+                                ipAddress,
+                                null)));
         try {
-            heartbeatReceiver = new HeartbeatReceiver(jdbi);
+            heartbeatReceiver = new HeartbeatReceiver(
+                    jdbi,
+                    heartbeat -> machineRegistry.heartbeat(
+                            heartbeat.clientId(),
+                            heartbeat.sequence(),
+                            heartbeat.rttMillis(),
+                            heartbeat.packetLossPercent()));
             beaconBroadcaster = new BeaconBroadcaster(serverId, tcpServer.localPort());
             tcpServer.start();
             heartbeatReceiver.start();

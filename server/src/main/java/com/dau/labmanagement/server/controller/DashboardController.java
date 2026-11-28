@@ -2,6 +2,7 @@ package com.dau.labmanagement.server.controller;
 
 import com.dau.labmanagement.server.model.entity.UserRole;
 import com.dau.labmanagement.server.model.service.LoginSession;
+import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -31,6 +32,7 @@ public final class DashboardController {
     @FXML private Button logoutButton;
 
     private LoginSession session;
+    private MachineSessionRegistry machineRegistry;
     private Runnable onLogout = () -> { };
 
     /** Applies the authenticated session and builds the role-scoped navigation. */
@@ -48,6 +50,11 @@ public final class DashboardController {
     /** Sets the callback invoked by the logout button. */
     public void setOnLogout(Runnable onLogout) {
         this.onLogout = Objects.requireNonNull(onLogout, "onLogout");
+    }
+
+    /** Supplies the live machine state used by the teacher dashboard. */
+    public void setMachineRegistry(MachineSessionRegistry machineRegistry) {
+        this.machineRegistry = machineRegistry;
     }
 
     /** Returns the active session, or null before {@link #setSession(LoginSession)}. */
@@ -73,7 +80,12 @@ public final class DashboardController {
             button.setOnAction(event -> {
                 navigation.getChildren().forEach(node -> node.getStyleClass().remove("nav-active"));
                 button.getStyleClass().add("nav-active");
-                showPlaceholder(title, description);
+                if (session.role() == UserRole.TEACHER
+                        && "Dashboard phòng máy".equals(title)) {
+                    showTeacherDashboard(title, description);
+                } else {
+                    showPlaceholder(title, description);
+                }
             });
             navigation.getChildren().add(button);
         });
@@ -112,6 +124,28 @@ public final class DashboardController {
         info.getStyleClass().add("body-text");
         info.setWrapText(true);
         Label note = new Label("Chức năng đang được hoàn thiện.");
+        note.getStyleClass().add("muted");
+        note.setWrapText(true);
+        panel.getChildren().addAll(heading, info, note);
+        contentOutlet.getChildren().setAll(panel);
+    }
+
+    private void showTeacherDashboard(String title, String description) {
+        pageTitle.setText(title);
+        if (machineRegistry != null) {
+            contentOutlet.getChildren().setAll(new TeacherDashboardView(machineRegistry));
+            return;
+        }
+
+        VBox panel = new VBox(14);
+        panel.getStyleClass().add("surface");
+        panel.setMaxWidth(Double.MAX_VALUE);
+        Label heading = new Label(title);
+        heading.getStyleClass().add("section-title");
+        Label info = new Label(description);
+        info.getStyleClass().add("body-text");
+        info.setWrapText(true);
+        Label note = new Label("Không thể tải trạng thái máy vì Server network runtime chưa khởi động.");
         note.getStyleClass().add("muted");
         note.setWrapText(true);
         panel.getChildren().addAll(heading, info, note);

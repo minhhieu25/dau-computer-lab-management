@@ -3,6 +3,7 @@ package com.dau.labmanagement.server.network.tcp;
 import com.dau.labmanagement.server.config.DatabaseMigrator;
 import com.dau.labmanagement.server.config.JdbiProvider;
 import com.dau.labmanagement.server.model.dao.MachineDao;
+import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
 import com.dau.labmanagement.server.network.udp.HeartbeatReceiver;
 import com.dau.labmanagement.shared.protocol.MessageType;
 import com.dau.labmanagement.shared.protocol.ProtocolFrame;
@@ -62,15 +63,34 @@ class ClientSessionHandlerTest {
             replacePasswordHash(dataSource, "teacher", studentPasswordHash);
 
             UUID clientId = UUID.randomUUID();
+            MachineSessionRegistry machineRegistry = new MachineSessionRegistry();
             try (HeartbeatReceiver heartbeats = new HeartbeatReceiver(
-                        jdbi, new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+                        jdbi,
+                        new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
+                        heartbeat -> machineRegistry.heartbeat(
+                                heartbeat.clientId(),
+                                heartbeat.sequence(),
+                                heartbeat.rttMillis(),
+                                heartbeat.packetLossPercent()));
                  TcpServer server = new TcpServer(
-                         0, new ClientSessionHandler(jdbi, "test-server"))) {
+                         0, new ClientSessionHandler(
+                                 jdbi,
+                                 "test-server",
+                                 (hello, ipAddress) -> machineRegistry.register(
+                                         hello.clientId(),
+                                         hello.hostname(),
+                                         ipAddress,
+                                         null)))) {
                 heartbeats.start();
                 server.start();
                 long studentSessionId;
                 try (Socket client = connect(clientId, server.localPort())) {
-                    sendHeartbeat(clientId, heartbeats.localPort());
+                    assertEquals(1, machineRegistry.snapshots().size());
+                    assertEquals("test-client", machineRegistry.snapshots().get(0).hostname());
+
+                    sendHeartbeat(clientId, heartbeats.localPort(), 42.0, 1.0);
+                    assertEquals(42.0, machineRegistry.snapshots().get(0).rttMillis());
+                    assertEquals(1.0, machineRegistry.snapshots().get(0).packetLossPercent());
                     OffsetDateTime firstHeartbeat = readLastSeen(dataSource, clientId);
                     assertNotNull(firstHeartbeat,
                             "A connected but unidentified machine is Online by heartbeat");
@@ -264,11 +284,24 @@ class ClientSessionHandlerTest {
     }
 
     private static void sendHeartbeat(UUID clientId, int heartbeatPort) throws Exception {
+        sendHeartbeat(clientId, heartbeatPort, null, null);
+    }
+
+    private static void sendHeartbeat(
+            UUID clientId,
+            int heartbeatPort,
+            Double rttMillis,
+            Double packetLossPercent) throws Exception {
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.setSoTimeout(2_000);
             byte[] data = UdpFrameCodec.encode(frame(
                     MessageType.HEARTBEAT,
-                    new HeartbeatMessage(clientId.toString(), 1, System.currentTimeMillis())));
+                    new HeartbeatMessage(
+                            clientId.toString(),
+                            1,
+                            System.currentTimeMillis(),
+                            rttMillis,
+                            packetLossPercent)));
             socket.send(new DatagramPacket(
                     data, data.length, InetAddress.getLoopbackAddress(), heartbeatPort));
 

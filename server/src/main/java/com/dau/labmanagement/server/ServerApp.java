@@ -8,6 +8,7 @@ import com.dau.labmanagement.server.model.service.JdbiLoginService;
 import com.dau.labmanagement.server.model.service.LoginService;
 import com.dau.labmanagement.server.model.service.LoginSession;
 import com.dau.labmanagement.server.model.service.LoginSessionRegistry;
+import com.dau.labmanagement.server.model.service.dashboard.DashboardDatabaseService;
 import com.dau.labmanagement.server.network.ServerNetworkRuntime;
 import com.dau.labmanagement.server.view.ServerNavigator;
 import com.zaxxer.hikari.HikariDataSource;
@@ -33,6 +34,7 @@ public final class ServerApp extends Application {
     private HikariDataSource dataSource;
     private Jdbi jdbi;
     private ServerNetworkRuntime networkRuntime;
+    private DashboardDatabaseService dashboardDatabaseService;
     private LoginSessionRegistry loginSessions;
     private LoginService loginService = LoginService.unavailable();
     private ServerNavigator navigator;
@@ -51,6 +53,11 @@ public final class ServerApp extends Application {
                 LOG.error("Network runtime failed to start; login stays available", exception);
                 networkRuntime = null;
             }
+            if (networkRuntime != null) {
+                dashboardDatabaseService = new DashboardDatabaseService(
+                        jdbi, networkRuntime.getMachineRegistry());
+                dashboardDatabaseService.start();
+            }
         }
 
         navigator = new ServerNavigator(stage);
@@ -62,6 +69,10 @@ public final class ServerApp extends Application {
         if (loginSessions != null) {
             loginSessions.closeAll();
         }
+        if (dashboardDatabaseService != null) {
+            dashboardDatabaseService.close();
+        }
+
         IOException closeFailure = null;
         if (networkRuntime != null) {
             try {
@@ -109,7 +120,10 @@ public final class ServerApp extends Application {
 
     private void onLoginSuccess(LoginSession session) {
         currentSession = session;
-        navigator.showDashboard(session, this::logout);
+        navigator.showDashboard(
+                session,
+                this::logout,
+                networkRuntime == null ? null : networkRuntime.getMachineRegistry());
     }
 
     private void logout() {

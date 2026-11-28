@@ -31,7 +31,31 @@ public final class ClientNetworkRuntime implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ClientNetworkRuntime.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private final String clientId = UUID.randomUUID().toString();
+    private final String clientId = loadMachineId();
+
+    private static synchronized String loadMachineId() {
+        java.util.prefs.Preferences preferences =
+                java.util.prefs.Preferences.userRoot()
+                        .node("com/dau/labmanagement/client");
+
+        String machineId = preferences.get("machineId", "");
+
+        try {
+            return UUID.fromString(machineId).toString();
+        } catch (IllegalArgumentException ignored) {
+            machineId = UUID.randomUUID().toString();
+            preferences.put("machineId", machineId);
+
+            try {
+                preferences.flush();
+            } catch (java.util.prefs.BackingStoreException exception) {
+                throw new IllegalStateException(
+                        "Cannot persist machine identity", exception);
+            }
+
+            return machineId;
+        }
+    }
     private final String hostname;
     private final int beaconPort;
     private final Consumer<String> statusConsumer;

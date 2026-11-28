@@ -22,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public final class HeartbeatReceiver implements AutoCloseable {
 
@@ -30,15 +31,30 @@ public final class HeartbeatReceiver implements AutoCloseable {
 
     private final Jdbi jdbi;
     private final DatagramSocket socket;
+    private final Consumer<HeartbeatMessage> heartbeatObserver;
     private final AtomicBoolean running = new AtomicBoolean();
     private Thread receiverThread;
 
     public HeartbeatReceiver(Jdbi jdbi) throws SocketException {
-        this(jdbi, new InetSocketAddress(PortConstants.UDP_HEARTBEAT));
+        this(jdbi, new InetSocketAddress(PortConstants.UDP_HEARTBEAT), heartbeat -> { });
+    }
+
+    public HeartbeatReceiver(
+            Jdbi jdbi,
+            Consumer<HeartbeatMessage> heartbeatObserver) throws SocketException {
+        this(jdbi, new InetSocketAddress(PortConstants.UDP_HEARTBEAT), heartbeatObserver);
     }
 
     public HeartbeatReceiver(Jdbi jdbi, InetSocketAddress bindAddress) throws SocketException {
+        this(jdbi, bindAddress, heartbeat -> { });
+    }
+
+    public HeartbeatReceiver(
+            Jdbi jdbi,
+            InetSocketAddress bindAddress,
+            Consumer<HeartbeatMessage> heartbeatObserver) throws SocketException {
         this.jdbi = Objects.requireNonNull(jdbi, "jdbi");
+        this.heartbeatObserver = Objects.requireNonNull(heartbeatObserver, "heartbeatObserver");
         socket = new DatagramSocket(bindAddress);
     }
 
@@ -81,6 +97,12 @@ public final class HeartbeatReceiver implements AutoCloseable {
                 if (updated == 0) {
                     LOG.debug("Ignoring heartbeat from unregistered client {}", machineGuid);
                     continue;
+                }
+
+                try {
+                    heartbeatObserver.accept(heartbeat);
+                } catch (RuntimeException exception) {
+                    LOG.warn("Invalid heartbeat metrics", exception);
                 }
 
                 AckMessage acknowledgment = new AckMessage(

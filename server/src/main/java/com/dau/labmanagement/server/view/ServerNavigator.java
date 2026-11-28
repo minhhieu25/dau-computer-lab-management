@@ -5,6 +5,7 @@ import com.dau.labmanagement.server.controller.DashboardController;
 import com.dau.labmanagement.server.controller.LoginController;
 import com.dau.labmanagement.server.model.service.LoginService;
 import com.dau.labmanagement.server.model.service.LoginSession;
+import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -64,8 +65,23 @@ public final class ServerNavigator {
      * @param onLogout callback invoked when the user logs out
      */
     public void showDashboard(LoginSession session, Runnable onLogout) {
+        showDashboard(session, onLogout, null);
+    }
+
+    /**
+     * Shows the dashboard shell for an authenticated role.
+     *
+     * @param session        the authenticated session
+     * @param onLogout       callback invoked when the user logs out
+     * @param machineRegistry live network state, or null when the network is unavailable
+     */
+    public void showDashboard(
+            LoginSession session,
+            Runnable onLogout,
+            MachineSessionRegistry machineRegistry) {
         View<DashboardController> view = load(DASHBOARD_VIEW);
         view.controller().setOnLogout(Objects.requireNonNull(onLogout, "onLogout"));
+        view.controller().setMachineRegistry(machineRegistry);
         view.controller().setSession(session);
         stage.setTitle("DAU Lab Management - Server · " + session.roleLabel());
         scene.setRoot(view.root());

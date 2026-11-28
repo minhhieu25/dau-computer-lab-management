@@ -38,4 +38,20 @@ public interface StudentSessionDao {
             SET logout_at = :logoutAt
             WHERE student_session_id = :studentSessionId AND logout_at IS NULL""")
     int closeSession(@Bind("studentSessionId") long studentSessionId, @Bind("logoutAt") OffsetDateTime logoutAt);
+
+    @SqlQuery("""
+            SELECT student_session_id,
+                   user_id,
+                   machine_id,
+                   login_at,
+                   logout_at
+            FROM student_session
+            WHERE machine_id = :machineId
+              AND logout_at IS NULL
+            ORDER BY login_at DESC,
+                     student_session_id DESC
+            LIMIT 1
+            """)
+    Optional<StudentSessionRow> findActiveByMachine(
+            @Bind("machineId") long machineId);
 }

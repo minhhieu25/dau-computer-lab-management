@@ -2,11 +2,13 @@ package com.dau.labmanagement.server.controller;
 
 import com.dau.labmanagement.server.model.entity.UserRole;
 import com.dau.labmanagement.server.model.service.LoginSession;
+import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -101,11 +103,37 @@ class DashboardControllerTest {
         assertTrue(shell.pageTitle().getText().contains("Dashboard phòng máy"));
     }
 
+    @Test
+    void teacherDashboardUsesTheLiveMachineRegistryWhenAvailable() throws Exception {
+        Shell shell = loadShell(
+                session(UserRole.TEACHER, "Giảng viên Một"),
+                new MachineSessionRegistry());
+
+        assertTrue(shell.contentOutlet().getChildren().get(0) instanceof TeacherDashboardView);
+    }
+
+    @Test
+    void teacherDashboardExplainsWhenNetworkRuntimeIsUnavailable() throws Exception {
+        Shell shell = loadShell(session(UserRole.TEACHER, "Giảng viên Một"));
+        VBox panel = (VBox) shell.contentOutlet().getChildren().get(0);
+
+        assertTrue(panel.getChildren().stream()
+                .filter(Label.class::isInstance)
+                .map(Label.class::cast)
+                .anyMatch(label -> label.getText().contains("network runtime")));
+    }
+
     private static LoginSession session(UserRole role, String fullName) {
         return new LoginSession(UUID.randomUUID(), 1L, "user01", fullName, role, OffsetDateTime.now());
     }
 
     private static Shell loadShell(LoginSession session) throws Exception {
+        return loadShell(session, null);
+    }
+
+    private static Shell loadShell(
+            LoginSession session,
+            MachineSessionRegistry machineRegistry) throws Exception {
         AtomicReference<Shell> reference = new AtomicReference<>();
         CountDownLatch loaded = new CountDownLatch(1);
         Platform.runLater(() -> {
@@ -114,6 +142,7 @@ class DashboardControllerTest {
                         DashboardControllerTest.class.getResource("/fxml/dashboard.fxml"));
                 Parent root = loader.load();
                 DashboardController controller = loader.getController();
+                controller.setMachineRegistry(machineRegistry);
                 controller.setSession(session);
                 reference.set(new Shell(
                         controller,
@@ -121,7 +150,8 @@ class DashboardControllerTest {
                         (Label) root.lookup("#identityLabel"),
                         (Label) root.lookup("#pageTitle"),
                         (Label) root.lookup("#statusLabel"),
-                        (Button) root.lookup("#logoutButton")));
+                        (Button) root.lookup("#logoutButton"),
+                        (StackPane) root.lookup("#contentOutlet")));
             } catch (Exception exception) {
                 throw new IllegalStateException(exception);
             } finally {
@@ -138,7 +168,8 @@ class DashboardControllerTest {
             Label identity,
             Label pageTitle,
             Label status,
-            Button logout) {
+            Button logout,
+            StackPane contentOutlet) {
 
         List<String> entries() {
             List<String> titles = new ArrayList<>();

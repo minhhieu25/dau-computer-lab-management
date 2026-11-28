@@ -20,7 +20,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.Socket;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 /** Handles a connected Client independently of whether a student has logged in. */
 public final class ClientSessionHandler implements TcpConnectionHandler {
@@ -31,11 +33,21 @@ public final class ClientSessionHandler implements TcpConnectionHandler {
     private final Jdbi jdbi;
     private final StudentIdentityService identityService;
     private final String serverId;
+    private final BiConsumer<HelloMessage, String> clientRegistrationObserver;
 
     public ClientSessionHandler(Jdbi jdbi, String serverId) {
-        this.jdbi = jdbi;
+        this(jdbi, serverId, (hello, ipAddress) -> { });
+    }
+
+    public ClientSessionHandler(
+            Jdbi jdbi,
+            String serverId,
+            BiConsumer<HelloMessage, String> clientRegistrationObserver) {
+        this.jdbi = Objects.requireNonNull(jdbi, "jdbi");
         this.identityService = new StudentIdentityService(jdbi);
-        this.serverId = serverId;
+        this.serverId = Objects.requireNonNull(serverId, "serverId");
+        this.clientRegistrationObserver = Objects.requireNonNull(
+                clientRegistrationObserver, "clientRegistrationObserver");
     }
 
     @Override
@@ -55,6 +67,8 @@ public final class ClientSessionHandler implements TcpConnectionHandler {
                 hello.hostname(),
                 socket.getInetAddress().getHostAddress(),
                 null));
+        clientRegistrationObserver.accept(
+                hello, socket.getInetAddress().getHostAddress());
 
         TcpFrameCodec.write(socket.getOutputStream(), new ProtocolFrame(
                 MessageType.HELLO_ACK,
