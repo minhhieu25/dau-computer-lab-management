@@ -1,47 +1,53 @@
 package com.dau.labmanagement.server.network;
 
+import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
+import com.dau.labmanagement.server.network.tcp.ClientSessionHandler;
 import com.dau.labmanagement.server.network.tcp.TcpServer;
 import com.dau.labmanagement.server.network.udp.BeaconBroadcaster;
 import com.dau.labmanagement.server.network.udp.HeartbeatReceiver;
-import com.dau.labmanagement.shared.protocol.MessageType;
-import com.dau.labmanagement.shared.protocol.ProtocolFrame;
-import com.dau.labmanagement.shared.protocol.ProtocolVersion;
 import com.dau.labmanagement.shared.protocol.PortConstants;
-import com.dau.labmanagement.shared.protocol.codec.TcpFrameCodec;
-import com.dau.labmanagement.shared.protocol.message.HelloAckMessage;
-import com.dau.labmanagement.shared.protocol.message.HelloMessage;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dau.labmanagement.server.model.service.dashboard.MachineSessionRegistry;
-import java.net.InetSocketAddress;
 import java.io.IOException;
-import java.net.Socket;
+import java.util.Objects;
 import java.util.UUID;
 
 public final class ServerNetworkRuntime implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerNetworkRuntime.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final String serverId = UUID.randomUUID().toString();
-    private final MachineSessionRegistry machineRegistry =
-            new MachineSessionRegistry();
-
-    public MachineSessionRegistry getMachineRegistry() {
-        return machineRegistry;
-    }
+    private final Jdbi jdbi;
+    private final MachineSessionRegistry machineRegistry = new MachineSessionRegistry();
 
     private TcpServer tcpServer;
     private HeartbeatReceiver heartbeatReceiver;
     private BeaconBroadcaster beaconBroadcaster;
 
+    public ServerNetworkRuntime(Jdbi jdbi) {
+        this.jdbi = Objects.requireNonNull(jdbi, "jdbi");
+    }
+
+    public MachineSessionRegistry getMachineRegistry() {
+        return machineRegistry;
+    }
+
     public void start() throws IOException {
-        tcpServer = new TcpServer(PortConstants.TCP_SERVER, this::handleTcpConnection);
+        tcpServer = new TcpServer(
+                PortConstants.TCP_SERVER,
+                new ClientSessionHandler(
+                        jdbi,
+                        serverId,
+                        (hello, ipAddress) -> machineRegistry.register(
+                                hello.clientId(),
+                                hello.hostname(),
+                                ipAddress,
+                                null)));
         try {
             heartbeatReceiver = new HeartbeatReceiver(
-                    new InetSocketAddress(PortConstants.UDP_HEARTBEAT),
+                    jdbi,
                     heartbeat -> machineRegistry.heartbeat(
                             heartbeat.clientId(),
                             heartbeat.sequence(),
@@ -55,42 +61,6 @@ public final class ServerNetworkRuntime implements AutoCloseable {
         } catch (IOException | RuntimeException exception) {
             closeAfterStartFailure(exception);
             throw exception;
-        }
-    }
-
-    private void handleTcpConnection(Socket socket) throws IOException {
-        socket.setSoTimeout(5_000);
-        ProtocolFrame helloFrame = TcpFrameCodec.read(socket.getInputStream());
-        if (helloFrame == null
-                || helloFrame.type() != MessageType.HELLO
-                || helloFrame.version() != ProtocolVersion.CURRENT) {
-            throw new IOException("Client must begin with a version 1 HELLO frame");
-        }
-
-        HelloMessage hello = TcpFrameCodec.payloadAs(helloFrame, HelloMessage.class);
-        if (hello.clientId() == null || hello.clientId().isBlank()
-                || hello.hostname() == null || hello.hostname().isBlank()) {
-            throw new IOException("HELLO requires clientId and hostname");
-        }
-
-        machineRegistry.register(
-                hello.clientId(),
-                hello.hostname(),
-                socket.getInetAddress().getHostAddress(),
-                null);
-
-        HelloAckMessage acknowledgment =
-                new HelloAckMessage(serverId, ProtocolVersion.CURRENT);
-        TcpFrameCodec.write(socket.getOutputStream(), new ProtocolFrame(
-                MessageType.HELLO_ACK,
-                ProtocolVersion.CURRENT,
-                OBJECT_MAPPER.valueToTree(acknowledgment)));
-        socket.setSoTimeout(0);
-        LOG.info("Client {} ({}) established a TCP session from {}",
-                hello.clientId(), hello.hostname(), socket.getRemoteSocketAddress());
-
-        while (TcpFrameCodec.read(socket.getInputStream()) != null) {
-            LOG.debug("Received a TCP protocol frame from client {}", hello.clientId());
         }
     }
 

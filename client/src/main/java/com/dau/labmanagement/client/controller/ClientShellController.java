@@ -1,81 +1,191 @@
 package com.dau.labmanagement.client.controller;
 
+import com.dau.labmanagement.shared.protocol.message.LoginAckMessage;
+import com.dau.labmanagement.shared.protocol.message.LoginStatus;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+
 import java.io.IOException;
 import java.net.URL;
-import javafx.application.Platform;
+import java.util.Arrays;
 
-/** Client shell navigation; real authentication and networking are out of scope. */
+/** JavaFX shell for Client student identity login. */
 public final class ClientShellController {
     @FXML private StackPane contentOutlet;
     @FXML private Label pageTitle;
     @FXML private Label clientStatus;
     @FXML private Button loginNav;
     @FXML private Button homeNav;
-    private String demoStudentId = "";
+
+    private TextField studentIdInput;
+    private PasswordField passwordInput;
+    private Button loginButton;
+    private Label feedback;
+    private Label identity;
+    private Node loginView;
+    private LoginAction loginAction;
+    private String authenticatedStudentId;
+    private String authenticatedFullName;
 
     @FXML
     private void initialize() {
+        loginView = createLoginView();
         showLogin();
     }
 
     @FXML
     private void showLogin() {
         select(loginNav);
-        pageTitle.setText("Đăng nhập sinh viên");
-        VBox form = new VBox(14);
-        form.getStyleClass().add("surface");
-        form.setMaxWidth(560);
-        Label heading = new Label("Màn hình đăng nhập");
-        heading.getStyleClass().add("section-title");
-        Label hint = new Label("Giao diện minh họa · chưa xác thực với Server");
-        hint.getStyleClass().add("muted");
-        TextField studentId = new TextField(demoStudentId);
-        studentId.setPromptText("Mã sinh viên");
-        Label feedback = new Label("Chưa đăng nhập");
-        feedback.getStyleClass().add("muted");
-        Button demoButton = new Button("Vào màn hình chính (minh họa)");
-        demoButton.getStyleClass().add("primary-button");
-        demoButton.setOnAction(event -> {
-            String value = studentId.getText().trim();
-            if (value.isEmpty()) {
-                feedback.setText("Vui lòng nhập mã sinh viên.");
-                return;
-            }
-            demoStudentId = value;
-            showHome();
-        });
-        form.getChildren().addAll(heading, hint, studentId, demoButton, feedback);
-        contentOutlet.getChildren().setAll(form);
-        clientStatus.setText("Client · Chưa kết nối Server (minh họa)");
+        pageTitle.setText("Đăng nhập định danh Client");
+        contentOutlet.getChildren().setAll(loginView);
     }
 
     @FXML
-    private void showHome() {
+    private void showIdentity() {
         select(homeNav);
-        pageTitle.setText("Trang chính sinh viên");
-        VBox panel = new VBox(14);
+        pageTitle.setText("Định danh sinh viên");
+        VBox panel = new VBox(12);
         panel.getStyleClass().add("surface");
-        Label heading = new Label("Khu vực chức năng Client");
+        panel.setMaxWidth(420);
+        Label heading = new Label("Trạng thái định danh");
         heading.getStyleClass().add("section-title");
-        Label identity = new Label(demoStudentId.isEmpty()
-                ? "Chưa đăng nhập · chỉ xem thử giao diện"
-                : "Sinh viên (minh họa): " + demoStudentId);
-        Label description = new Label("Vùng tích hợp màn hình Client sau này: thông báo, nhận tài liệu và trạng thái máy.");
-        description.setWrapText(true);
-        description.getStyleClass().add("body-text");
-        Label note = new Label("Chưa có xác thực, TCP/UDP hoặc giám sát thực tế.");
-        note.getStyleClass().add("muted");
-        panel.getChildren().addAll(heading, identity, description, note);
+        Label status = new Label(authenticatedStudentId == null
+                ? "Chưa đăng nhập · khi đã kết nối Server, máy vẫn Online."
+                : "Đã định danh: " + authenticatedFullName + " · " + authenticatedStudentId);
+        status.getStyleClass().add("body-text");
+        panel.getChildren().addAll(heading, status);
         contentOutlet.getChildren().setAll(panel);
-        clientStatus.setText("Client · Chưa kết nối Server (minh họa)");
+    }
+
+    private Node createLoginView() {
+        studentIdInput = new TextField();
+        studentIdInput.setPromptText("Mã sinh viên (MSSV)");
+        passwordInput = new PasswordField();
+        passwordInput.setPromptText("Mật khẩu");
+        loginButton = new Button("Đăng nhập");
+        loginButton.getStyleClass().add("primary-button");
+        loginButton.setMaxWidth(Double.MAX_VALUE);
+        loginButton.setOnAction(event -> submitLogin());
+        feedback = new Label("Chưa đăng nhập");
+        feedback.getStyleClass().addAll("muted", "login-feedback");
+        identity = new Label();
+        identity.getStyleClass().add("login-identity");
+        identity.setWrapText(true);
+
+        VBox form = new VBox(10);
+        form.getStyleClass().add("surface");
+        form.setMaxWidth(390);
+        Label icon = new Label("▣");
+        icon.getStyleClass().add("login-icon");
+        Label heading = new Label("Định danh sinh viên");
+        heading.getStyleClass().add("login-heading");
+        Label description = new Label(
+                "Đăng nhập trên máy Client để hệ thống nhận biết máy của sinh viên.");
+        description.getStyleClass().add("muted");
+        description.setWrapText(true);
+        Label studentIdLabel = new Label("Mã sinh viên (MSSV)");
+        studentIdLabel.getStyleClass().add("field-label");
+        Label passwordLabel = new Label("Mật khẩu");
+        passwordLabel.getStyleClass().add("field-label");
+        form.getChildren().addAll(
+                icon, heading, description, studentIdLabel, studentIdInput,
+                passwordLabel, passwordInput, loginButton, feedback, identity);
+
+        VBox note = new VBox(10);
+        note.getStyleClass().addAll("surface", "login-note");
+        note.setMaxWidth(330);
+        Label noteHeading = new Label("Nguyên tắc định danh");
+        noteHeading.getStyleClass().add("section-title");
+        Label online = new Label(
+                "Chưa đăng nhập · khi đã kết nối Server, máy vẫn Online và nhận lệnh.");
+        online.getStyleClass().add("body-text");
+        online.setWrapText(true);
+        Label privacy = new Label(
+                "Mật khẩu không được gửi nguyên văn. Đăng nhập chỉ gắn danh tính sinh viên "
+                        + "với máy và phiên hiện tại.");
+        privacy.getStyleClass().add("muted");
+        privacy.setWrapText(true);
+        note.getChildren().addAll(noteHeading, online, privacy);
+
+        HBox layout = new HBox(18, form, note);
+        layout.getStyleClass().add("login-layout");
+        layout.setMaxWidth(760);
+        return layout;
+    }
+
+    private void submitLogin() {
+        String studentId = studentIdInput.getText() == null
+                ? "" : studentIdInput.getText().trim();
+        char[] password = passwordInput.getText().toCharArray();
+        if (studentId.isBlank() || studentId.length() > 50 || password.length == 0) {
+            Arrays.fill(password, '\0');
+            showFailure("Vui lòng nhập MSSV hợp lệ và mật khẩu.");
+            return;
+        }
+        if (loginAction == null) {
+            Arrays.fill(password, '\0');
+            showFailure("Chưa kết nối Server. Máy chỉ Online khi kết nối được thiết lập.");
+            return;
+        }
+
+        loginButton.setDisable(true);
+        feedback.setText("Đang xác thực với Server...");
+        feedback.getStyleClass().removeAll("login-error", "login-success");
+        feedback.getStyleClass().add("muted");
+        Thread.ofVirtual().start(() -> {
+            try {
+                LoginAckMessage result = loginAction.login(studentId, password);
+                Platform.runLater(() -> showLoginResult(result));
+            } catch (IOException exception) {
+                Platform.runLater(() -> showFailure(
+                        "Không thể hoàn tất xác thực với Server. Vui lòng thử lại."));
+            } finally {
+                Arrays.fill(password, '\0');
+            }
+        });
+    }
+
+    private void showLoginResult(LoginAckMessage result) {
+        if (result != null && result.status() == LoginStatus.AUTHENTICATED
+                && result.studentId() != null && result.fullName() != null) {
+            authenticatedStudentId = result.studentId();
+            authenticatedFullName = result.fullName();
+            feedback.setText("Định danh thành công.");
+            feedback.getStyleClass().removeAll("muted", "login-error");
+            feedback.getStyleClass().add("login-success");
+            identity.setText(authenticatedFullName + " · MSSV " + authenticatedStudentId);
+            studentIdInput.setDisable(true);
+            passwordInput.clear();
+            passwordInput.setDisable(true);
+            loginButton.setDisable(true);
+            return;
+        }
+        showFailure(result == null || result.message() == null || result.message().isBlank()
+                ? "Sai MSSV/mật khẩu hoặc tài khoản đã bị khóa."
+                : result.message());
+    }
+
+    private void showFailure(String message) {
+        feedback.setText(message);
+        feedback.getStyleClass().removeAll("muted", "login-success");
+        if (!feedback.getStyleClass().contains("login-error")) {
+            feedback.getStyleClass().add("login-error");
+        }
+        if (loginButton != null) {
+            loginButton.setDisable(false);
+        }
+        if (passwordInput != null) {
+            passwordInput.clear();
+        }
     }
 
     private void select(Button selected) {
@@ -90,6 +200,11 @@ public final class ClientShellController {
             return;
         }
         Platform.runLater(() -> clientStatus.setText("Client · " + status));
+    }
+
+    /** Supplies the real network login operation after the shell is loaded. */
+    public void setLoginAction(LoginAction loginAction) {
+        this.loginAction = loginAction;
     }
 
     /** Replaces the current Client screen without creating another stage. */
@@ -108,5 +223,10 @@ public final class ClientShellController {
             throw new IOException("FXML resource not found: " + resourcePath);
         }
         showContent(FXMLLoader.load(url), title);
+    }
+
+    @FunctionalInterface
+    public interface LoginAction {
+        LoginAckMessage login(String studentId, char[] password) throws IOException;
     }
 }

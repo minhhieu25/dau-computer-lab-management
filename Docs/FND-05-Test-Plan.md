@@ -45,7 +45,7 @@ Test fixture dung timeout cho connect, accept va read; cac test duoc bao ve boi 
 
 ## 6. Test cases BR-01 den BR-10
 
-Tat ca BR case duoi day chua duoc thuc thi vi chuc nang/dependency chua san sang. Cac case ghi dependency ro rang, khong duoc xem la PASS.
+Cac BR case duoi day chi duoc danh dau PASS khi co ket qua chay thuc te. SC_001 va SC_002 co ket qua rieng; `BR09-IT-01` la ket qua tong hop va chi PASS cho cac phan da duoc kiem chung. Cac case con lai van chua duoc thuc thi vi chuc nang/dependency chua san sang.
 
 | Test ID | BR ID | Loai | Tien dieu kien | Du lieu dau vao | Buoc thuc hien | Ket qua mong doi | Trang thai |
 |---|---|---|---|---|---|---|---|
@@ -53,12 +53,13 @@ Tat ca BR case duoi day chua duoc thuc thi vi chuc nang/dependency chua san sang
 | BR02-IT-01 | BR-02 | IT, MT | FND-03 command contract; Client overlay/input control | LOCK/UNLOCK cho tat ca va tap con; commandId trung lap; client ket noi muon | Gui lock/unlock; gui lai commandId; ket noi client sau khi da lock; theo doi tien do | Dung may bi anh huong; overlay va thong bao hien thi; input bi khoa; command lap khong xu ly hai lan; client moi dong bo state; tien do chinh xac | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
 | BR03-MT-01 | BR-03 | NT, MT | FND-03 UDP contract; may phong lab; capture/recording implementation | Luong man hinh; multicast group; live-view 854x480, 5 FPS; MP4 | Bat/tat trinh chieu; kiem tra nhieu client; bat/dung live-view mot client; bat/dung recording | Mot luong multicast toi client; Focus Mode dung; live-view unicast chi ve server; kich thuoc/FPS dat yeu cau; recording MP4 480p luu tren server | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
 | BR04-IT-01 | BR-04 | IT, MT | FND-03 TCP file contract; Client da dinh danh | Tep thuong, ZIP/CAD/Revit; nhieu may nhan chon loc | Chon tep tren server; chon client; push; so sanh ten, kich thuoc va noi dung tep | Tep den dung client qua TCP, noi dung/toan ven; luu tai `D:\ThuMucDungChung\<MSSV>\DeBai`; khong gui toi may ngoai danh sach | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
-| BR05-IT-01 | BR-05 | IT, MT | FND-02 neu co persistence; FND-03 TCP/file contract; Client folder policy | Tep trong `NopBai`; nhieu MSSV/IP; folder rong | Phat lenh thu; kiem tra folder bi khoa; nhan tep va doi chieu server; kiem tra thong ke | Tep duoc gui qua TCP, giu ten/noi dung va luu dung thu muc theo giang vien/thoi diem/IP/MSSV; bao cao Da nop/Chua nop dung | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
+| BR05-IT-01 | BR-05 | IT, MT | FND-02 persistence; FND-03 TCP/file contract; Client folder policy | Tep trong `NopBai`; nhieu MSSV/IP; folder rong | Phat lenh thu; kiem tra folder bi khoa; nhan tep va doi chieu server; kiem tra thong ke | Tep duoc gui qua TCP, giu ten/noi dung va luu dung thu muc theo giang vien/thoi diem/IP/MSSV; bao cao Da nop/Chua nop dung | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
 | BR06-NT-01 | BR-06 | NT, MT | FND-03 ACK/timeout contract; Client fail-safe implementation | Mat 3 ACK (~30 s); dong socket; server tat dot ngot | Khoa client; gay tung kieu mat ket noi; theo doi trang thai client va ket noi lai | Client tu mo khoa, thoat Focus Mode, dung live-view, tat canh bao khi mat ACK/TCP; tu thu ket noi lai khi mang phuc hoi | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
-| BR07-MT-01 | BR-07 | MT | FND-02 recording metadata/permission neu co; FND-03 live-view; UI Client | Yeu cau giam sat/ghi hinh; Admin; giang vien tao recording; giang vien khac | Bat/tat giam sat va ghi; kiem tra icon Client; thu truy cap recording theo role; kiem tra log va du lieu thu | Chi giam sat khi chu dong; icon/canh bao dung; video chi luu tren Server; Admin va dung giang vien duoc phep; khong ghi phim/am thanh/quet ngoai folder hoc tap; co audit log | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
+| BR07-MT-01 | BR-07 | MT | FND-02 recording metadata/permission; FND-03 live-view; UI Client | Yeu cau giam sat/ghi hinh; Admin; giang vien tao recording; giang vien khac | Bat/tat giam sat va ghi; kiem tra icon Client; thu truy cap recording theo role; kiem tra log va du lieu thu | Chi giam sat khi chu dong; icon/canh bao dung; video chi luu tren Server; Admin va dung giang vien duoc phep; khong ghi phim/am thanh/quet ngoai folder hoc tap; co audit log | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
 | BR08-IT-01 | BR-08 | IT, NT, MT | FND-03 metrics contract; file transfer va stream co san | File co dung luong biet truoc; heartbeat/video; cac may co RTT/loss khac nhau | Chay push/pull; doi chieu Mbps, phan tram, ETA; chay UDP; doi chieu RTT/loss/FPS/bandwidth | Don vi Mbps, MB/GB dung; metrics theo tung may/luong; % hoan thanh va ETA hop ly; RTT/loss/FPS/bandwidth duoc cap nhat | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
-| BR09-IT-01 | BR-09 | IT, MT | FND-02 schema/DAO; auth/role feature; Server va Client | Tai khoan Admin/Giang vien/Sinh vien; sai mat khau; tai khoan khoa; Client chua login | Dang nhap Server theo role; thu cac thao tac duoc/khong duoc phep; quan ly tai khoan; mo Client khong login | Server yeu cau dang nhap; chi giang vien dieu khien lop; Admin quan ly tai khoan; sinh vien chi dinh danh Client; may chua login van online | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FEATURE` |
-| BR10-IT-01 | BR-10 | IT, MT | FND-02 recording schema/DAO; recording/auth feature | Recording qua han/con han; Admin; giang vien tao; giang vien khac | Tao recording; xem list/replay/xoa theo role; doi retention; chay cleanup; kiem tra audit log | Admin xem/xoa tat ca; giang vien chi xem recording cua minh; qua han tu xoa theo retention; log day du nguoi/thoi diem/hanh dong; mac dinh 30 ngay | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FEATURE` |
+| BR09-IT-01 | BR-09 | IT, MT | FND-02 schema/DAO; auth/role feature; Server va Client | Tai khoan Admin/Giang vien/Sinh vien; sai mat khau; tai khoan khoa; Client chua login | Dang nhap Server theo role; thu cac thao tac duoc/khong duoc phep; quan ly tai khoan; mo Client khong login | Server yeu cau dang nhap; chi giang vien dieu khien lop; Admin quan ly tai khoan; sinh vien chi dinh danh Client; may chua login van online | `PASS` (phan dang nhap Server, SC_001 va Client, SC_002); `BLOCKED_BY_FEATURE` (quan ly tai khoan) |
+| BR09-SC002-IT-01 | BR-09 | IT, NT | FND-02 migrations/DAO; `LOGIN` / `LOGIN_ACK`; Client JavaFX; heartbeat UDP | Sinh vien active, locked, sai mat khau, MSSV khong ton tai va tai khoan teacher | Ket noi HELLO; gui heartbeat UDP va dang nhap that/bai tren TCP; doi chieu `machine.last_seen_at`, `student_session` voi user/machine; kiem tra UI success/error | Chi sinh vien active tao session dung user/machine; may Online theo heartbeat ca truoc login va sau login loi; qua nguong heartbeat thi Offline; UI hien thi dung danh tinh/loi | `PASS` |
+| BR10-IT-01 | BR-10 | IT, MT | FND-02 recording schema/DAO; recording/auth feature | Recording qua han/con han; Admin; giang vien tao; giang vien khac | Tao recording; xem list/replay/xoa theo role; doi retention; chay cleanup; kiem tra audit log | Admin xem/xoa tat ca; giang vien chi xem file cua minh; qua han tu xoa theo retention; log day du nguoi/thoi diem/hanh dong; mac dinh 30 ngay | `BLOCKED_BY_FEATURE` |
 
 ## 7. Test cases FND-05 harness va PostgreSQL
 
@@ -71,15 +72,14 @@ Tat ca BR case duoi day chua duoc thuc thi vi chuc nang/dependency chua san sang
 | FND05-IT-04 | N/A | IT | Fixture da tao socket | Dong FakeServer/FakeClient | Dong fixture va kiem tra trang thai socket | Socket/fixture duoc dong; khong ro ri tai nguyen | `PASS` |
 | FND05-IT-05 | N/A | IT | FakeClient/FakeServer da build | Payload rong, chi whitespace hoac co CR/LF | Thu gui command, heartbeat va ACK khong hop le | Fixture tu choi truoc khi ghi message ra socket | `PASS` |
 | FND05-IT-06 | N/A | IT | Hai fixture da ket noi | Message co prefix khong mong doi | Gui message sai loai va goi phuong thuc receive tuong ung | Fixture bao IOException, khong coi du lieu sai dinh dang la ACK/command/heartbeat hop le | `PASS` |
-| FND05-DB-01 | N/A | IT | FND-02 migration va DAO that co san | Du lieu CRUD/rang buoc theo schema that | Chay migration trong Embedded PostgreSQL; CRUD, FK, constraint va rollback theo DAO/schema | Ket qua phu hop schema that; moi test co du lieu co lap | `BLOCKED_BY_FND_02` |
+| FND05-DB-01 | N/A | IT | FND-02 migration va DAO that co san | Du lieu CRUD/rang buoc theo schema that | Chay migration trong Embedded PostgreSQL; CRUD, FK, constraint va rollback theo DAO/schema | Ket qua phu hop schema that; moi test co du lieu co lap | `NOT_RUN` |
 | FND05-DB-02 | N/A | IT | Khong can schema/DAO | `SELECT 1` | Khoi dong Zonky Embedded PostgreSQL; mo JDBC connection; chay query; dong tai nguyen | PostgreSQL embedded tra ket qua 1 va connection duoc dong sach | `PASS` |
 
 ## 8. Gioi han va dependency
 
-- Tren nhanh FND-05 hien tai, migration/DAO FND-02 chua duoc tich hop. Remote `origin/feature/fnd-02-db-schema` co `db/migration/V1__schema.sql`, `V2__seed.sql`, cac DAO trong `modules/server/.../model/dao`, va `DatabaseMigrationIT`. Tuy nhien nhanh FND-02 dat Gradle module tai `modules/*`, khong trung layout root `shared/server/client/shared-test` cua nhanh nay; khong duoc copy/integrate code production FND-02 trong FND-05.
-- FND-02 remote chua co auth service xac thuc password/session; `UserDao.findActiveByUsername()` va `StudentSessionDao` la DAO, khong phai API dang nhap. `DatabaseMigrationIT` co hau to `IT`, va server build khong khai bao task integration-test rieng; can owner FND-02/FND-06 xac nhan cach chay.
-- Khong tao schema gia. CRUD/FK/constraint/rollback DAO tests tren nhanh hien tai van `BLOCKED_BY_FND_02`.
-- FND-03 chua co protocol/network implementation trong workspace tai thoi diem lap ke hoach. Harness loopback la fixture doc lap; BR test can contract that va dang cho FND-03.
+- FND-02 migrations va DAO da duoc tich hop vao `main`; SC_002 su dung schema/DAO that trong kiem thu Embedded PostgreSQL, khong tao schema gia.
+- Test CRUD/FK/constraint/rollback theo DAO chua co ket qua chay trong dot nay; ghi `NOT_RUN` cho den khi co bang chung thuc thi.
+- SC_002 hien co LOGIN/LOGIN_ACK tren TCP va test tich hop voi migration/DAO that tren Embedded PostgreSQL; ket qua duoc ghi o `BR09-SC002-IT-01`. Cac case BR khac van cho feature tuong ung.
 - Kiem thu multicast, UDP quality, Windows input blocking, file lon, MP4 va retention can implementation va/hoac phong may that; khong the xac nhan bang loopback harness.
 - Cac test BR la ke hoach chua chay, khong phai ket qua nghiem thu. Cap nhat trang thai sau moi dot chay voi output Gradle thuc te.
 
@@ -94,3 +94,35 @@ Ngay 2026-11-22, voi Java 21 toolchain:
 | `gradlew.bat build` | BUILD SUCCESSFUL | Full multi-module build; cac test da chay o hai lenh tren |
 
 Tong test thuc thi: 12 passed, 0 failed, 0 skipped. Gradle co canh bao deprecated features, nhung khong anh huong ket qua build. Ket qua nay khong bao gom BR integration/network/manual tests hoac DAO tests dang bi chan.
+
+## 10. Ket qua SC_002 (Dang nhap Client)
+
+Ngay 2026-11-26, voi Java 21 toolchain:
+
+| Lenh | Ket qua | Test |
+|---|---|---|
+| `.\gradlew.bat build` | BUILD SUCCESSFUL | 28 passed, 0 failed, 0 errors, 0 skipped tren client, server, shared va shared-test |
+
+Dot chay nay bao gom cac test SC_002 tren nhanh `feature/sc-002-client-login`; ket qua chi bao gom cac test duoc liet ke va khong thay the dot chay SC_001 ben duoi.
+
+## 11. Ket qua SC_001 (Dang nhap Server)
+
+Ngay 2026-11-28, nhanh `feature/sc-001-server-login`:
+
+| Lenh | Ket qua | Test |
+|---|---|---|
+| `gradlew.bat :shared:test` | BUILD SUCCESSFUL | 13 passed (them `PasswordHasherTest`: 5 case) |
+| `gradlew.bat :server:test` | BUILD SUCCESSFUL | 46 passed, 0 failed |
+
+Chi tiet test SC_001:
+
+| Test class | So case | Noi dung |
+|---|---|---|
+| `JdbiLoginServiceIT` | 10 | PostgreSQL nhung that: teacher/admin dang nhap, trim username, sai mat khau, tai khoan khong ton tai, tai khoan khoa, tai khoan xoa mem, sinh vien bi tu choi tren Server, input rong, khong mo phien khi that bai |
+| `LoginControllerTest` | 8 | Form that tu `login.fxml`: dieu huong theo role, thong bao loi tung truong hop, chan input rong truoc khi goi service, loi service -> SYSTEM_UNAVAILABLE, xoa password field, an loi o lan thu tiep theo, stylesheet nap duoc |
+| `DashboardControllerTest` | 5 | Giang vien chi thay menu lop hoc; Admin chi thay menu quan tri; dang xuat; session hien hanh; muc dieu huong dau tien duoc chon |
+| `LoginSessionRegistryTest` | 5 | Mo/tim/dong phien, id duy nhat, null/khong ton tai, closeAll |
+| `LoginResultTest` | 5 | Success/rejected, bat buoc dung mot ket qua, moi ly do co thong bao, service unavailable |
+| `ServerNavigatorTest` | 2 | Luong that: dang nhap thanh cong thay form bang dashboard dung role; dang nhap that bai giu form va hien loi |
+
+Phan chua kiem thu duoc trong SC_001: thao tac nguoi dung that tren Windows (MT). Tich hop Client SC_002 duoc ghi rieng tai `BR09-SC002-IT-01`.

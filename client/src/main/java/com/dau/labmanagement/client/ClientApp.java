@@ -22,6 +22,7 @@ public final class ClientApp extends Application {
         Parent root = loader.load();
         ClientShellController controller = loader.getController();
         networkRuntime = new ClientNetworkRuntime(controller::setNetworkStatus);
+        controller.setLoginAction(networkRuntime::loginStudent);
         networkRuntime.start();
 
         Scene scene = new Scene(root, 1180, 760);
