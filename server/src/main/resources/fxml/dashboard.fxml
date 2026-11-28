@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.dau.labmanagement.server.controller.ServerShellController" styleClass="app-root">
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.dau.labmanagement.server.controller.DashboardController" styleClass="app-root">
     <top>
         <HBox alignment="CENTER_LEFT" spacing="18" styleClass="top-bar">
             <children>
                 <Label text="DAU | QUẢN LÝ PHÒNG MÁY" styleClass="brand" />
                 <Region HBox.hgrow="ALWAYS" />
-                <Label text="Chế độ minh họa vai trò" styleClass="header-caption" />
-                <ComboBox fx:id="roleSelector" onAction="#onRoleChanged" prefWidth="160" />
+                <Label fx:id="identityLabel" styleClass="header-caption" />
+                <Button fx:id="logoutButton" text="Đăng xuất" onAction="#onLogout" styleClass="header-button" />
             </children>
         </HBox>
     </top>
     <left>
-        <VBox prefWidth="245" spacing="12" styleClass="side-bar">
+        <VBox prefWidth="260" spacing="12" styleClass="side-bar">
             <children>
-                <Label text="ĐIỀU HƯỚNG" styleClass="sidebar-title" />
+                <Label fx:id="navigationTitle" text="ĐIỀU HƯỚNG" styleClass="sidebar-title" />
                 <VBox fx:id="navigation" spacing="6" VBox.vgrow="ALWAYS" />
                 <Label fx:id="roleLabel" wrapText="true" styleClass="sidebar-foot" />
             </children>
@@ -24,11 +24,12 @@
     <center>
         <VBox spacing="18" styleClass="content-area">
             <children>
-                <Label fx:id="pageTitle" text="" styleClass="page-title" />
-                <Label text="Khung ứng dụng Server · FND-04" styleClass="muted" />
+                <Label fx:id="pageTitle" styleClass="page-title" />
                 <StackPane fx:id="contentOutlet" VBox.vgrow="ALWAYS" />
             </children>
         </VBox>
     </center>
-    <bottom><Label fx:id="navigationStatus" text="FND-04 · Demo UI, không phải dữ liệu thật" styleClass="bottom-bar" /></bottom>
+    <bottom>
+        <Label fx:id="statusLabel" text="Server · Đã đăng nhập" styleClass="bottom-bar" />
+    </bottom>
 </BorderPane>
