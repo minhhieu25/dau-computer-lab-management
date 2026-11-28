@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.dau.labmanagement.server.controller.LoginController" styleClass="app-root">
+    <center>
+        <StackPane styleClass="login-page">
+            <children>
+                <VBox prefWidth="400" maxWidth="400" spacing="14" styleClass="surface login-card">
+                    <children>
+                        <Label text="QL &amp; GS Phòng máy" styleClass="login-heading" />
+                        <Label text="Đăng nhập để tiếp tục" styleClass="muted" />
+                        <Region prefHeight="10" />
+                        <Label text="Tài khoản" styleClass="field-label" />
+                        <TextField fx:id="usernameField" promptText="Tên đăng nhập" />
+                        <Label text="Mật khẩu" styleClass="field-label" />
+                        <PasswordField fx:id="passwordField" promptText="Mật khẩu" />
+                        <Region prefHeight="6" />
+                        <Button fx:id="loginButton" text="Đăng nhập" onAction="#onLogin"
+                                maxWidth="Infinity" styleClass="primary-button" />
+                        <Label fx:id="errorLabel" managed="false" visible="false" wrapText="true"
+                               styleClass="login-error" />
+                    </children>
+                </VBox>
+            </children>
+        </StackPane>
+    </center>
+    <bottom>
+        <Label fx:id="statusLabel" text="Server · Chưa đăng nhập" styleClass="bottom-bar" />
+    </bottom>
+</BorderPane>
