@@ -1,6 +1,7 @@
 package com.dau.labmanagement.server.model.dao;
 
 import com.dau.labmanagement.server.model.entity.UserRow;
+import org.jdbi.v3.sqlobject.config.RegisterConstructorMapper;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
@@ -13,6 +14,7 @@ import java.util.Optional;
  * Role and status values follow the CHECK constraints: see
  * {@code UserRole} and {@code AccountStatus} for the constants.
  */
+@RegisterConstructorMapper(UserRow.class)
 public interface UserDao {
 
     @SqlQuery("""
