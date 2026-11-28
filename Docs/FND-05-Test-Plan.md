@@ -57,7 +57,7 @@ Tat ca BR case duoi day chua duoc thuc thi vi chuc nang/dependency chua san sang
 | BR06-NT-01 | BR-06 | NT, MT | FND-03 ACK/timeout contract; Client fail-safe implementation | Mat 3 ACK (~30 s); dong socket; server tat dot ngot | Khoa client; gay tung kieu mat ket noi; theo doi trang thai client va ket noi lai | Client tu mo khoa, thoat Focus Mode, dung live-view, tat canh bao khi mat ACK/TCP; tu thu ket noi lai khi mang phuc hoi | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
 | BR07-MT-01 | BR-07 | MT | FND-02 recording metadata/permission neu co; FND-03 live-view; UI Client | Yeu cau giam sat/ghi hinh; Admin; giang vien tao recording; giang vien khac | Bat/tat giam sat va ghi; kiem tra icon Client; thu truy cap recording theo role; kiem tra log va du lieu thu | Chi giam sat khi chu dong; icon/canh bao dung; video chi luu tren Server; Admin va dung giang vien duoc phep; khong ghi phim/am thanh/quet ngoai folder hoc tap; co audit log | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
 | BR08-IT-01 | BR-08 | IT, NT, MT | FND-03 metrics contract; file transfer va stream co san | File co dung luong biet truoc; heartbeat/video; cac may co RTT/loss khac nhau | Chay push/pull; doi chieu Mbps, phan tram, ETA; chay UDP; doi chieu RTT/loss/FPS/bandwidth | Don vi Mbps, MB/GB dung; metrics theo tung may/luong; % hoan thanh va ETA hop ly; RTT/loss/FPS/bandwidth duoc cap nhat | `BLOCKED_BY_FND_03`, `BLOCKED_BY_FEATURE` |
-| BR09-IT-01 | BR-09 | IT, MT | FND-02 schema/DAO; auth/role feature; Server va Client | Tai khoan Admin/Giang vien/Sinh vien; sai mat khau; tai khoan khoa; Client chua login | Dang nhap Server theo role; thu cac thao tac duoc/khong duoc phep; quan ly tai khoan; mo Client khong login | Server yeu cau dang nhap; chi giang vien dieu khien lop; Admin quan ly tai khoan; sinh vien chi dinh danh Client; may chua login van online | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FEATURE` |
+| BR09-IT-01 | BR-09 | IT, MT | FND-02 schema/DAO; auth/role feature; Server va Client | Tai khoan Admin/Giang vien/Sinh vien; sai mat khau; tai khoan khoa; Client chua login | Dang nhap Server theo role; thu cac thao tac duoc/khong duoc phep; quan ly tai khoan; mo Client khong login | Server yeu cau dang nhap; chi giang vien dieu khien lop; Admin quan ly tai khoan; sinh vien chi dinh danh Client; may chua login van online | `PASS` (phan Server login, SC_001 — xem muc 10); `BLOCKED_BY_FEATURE` (quan ly tai khoan, Client) |
 | BR10-IT-01 | BR-10 | IT, MT | FND-02 recording schema/DAO; recording/auth feature | Recording qua han/con han; Admin; giang vien tao; giang vien khac | Tao recording; xem list/replay/xoa theo role; doi retention; chay cleanup; kiem tra audit log | Admin xem/xoa tat ca; giang vien chi xem recording cua minh; qua han tu xoa theo retention; log day du nguoi/thoi diem/hanh dong; mac dinh 30 ngay | `BLOCKED_BY_FND_02`, `BLOCKED_BY_FEATURE` |
 
 ## 7. Test cases FND-05 harness va PostgreSQL
@@ -94,3 +94,25 @@ Ngay 2026-11-22, voi Java 21 toolchain:
 | `gradlew.bat build` | BUILD SUCCESSFUL | Full multi-module build; cac test da chay o hai lenh tren |
 
 Tong test thuc thi: 12 passed, 0 failed, 0 skipped. Gradle co canh bao deprecated features, nhung khong anh huong ket qua build. Ket qua nay khong bao gom BR integration/network/manual tests hoac DAO tests dang bi chan.
+
+## 10. Ket qua SC_001 (Dang nhap Server)
+
+Ngay 2026-11-28, nhanh `feature/sc-001-server-login`:
+
+| Lenh | Ket qua | Test |
+|---|---|---|
+| `gradlew.bat :shared:test` | BUILD SUCCESSFUL | 13 passed (them `PasswordHasherTest`: 5 case) |
+| `gradlew.bat :server:test` | BUILD SUCCESSFUL | 46 passed, 0 failed |
+
+Chi tiet test SC_001:
+
+| Test class | So case | Noi dung |
+|---|---|---|
+| `JdbiLoginServiceIT` | 10 | PostgreSQL nhung that: teacher/admin dang nhap, trim username, sai mat khau, tai khoan khong ton tai, tai khoan khoa, tai khoan xoa mem, sinh vien bi tu choi tren Server, input rong, khong mo phien khi that bai |
+| `LoginControllerTest` | 8 | Form that tu `login.fxml`: dieu huong theo role, thong bao loi tung truong hop, chan input rong truoc khi goi service, loi service -> SYSTEM_UNAVAILABLE, xoa password field, an loi o lan thu tiep theo, stylesheet nap duoc |
+| `DashboardControllerTest` | 5 | Giang vien chi thay menu lop hoc; Admin chi thay menu quan tri; dang xuat; session hien hanh; muc dieu huong dau tien duoc chon |
+| `LoginSessionRegistryTest` | 5 | Mo/tim/dong phien, id duy nhat, null/khong ton tai, closeAll |
+| `LoginResultTest` | 5 | Success/rejected, bat buoc dung mot ket qua, moi ly do co thong bao, service unavailable |
+| `ServerNavigatorTest` | 2 | Luong that: dang nhap thanh cong thay form bang dashboard dung role; dang nhap that bai giu form va hien loi |
+
+Phan chua kiem thu duoc trong SC_001: thao tac nguoi dung that tren Windows (MT) va tich hop voi Client SC_002 (thuoc nhanh `feature/sc-002-client-login`).
